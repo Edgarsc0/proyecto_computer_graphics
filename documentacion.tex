@@ -1,55 +1,24 @@
 \documentclass[12pt,a4paper]{article}
 \usepackage[utf8]{inputenc}
 \usepackage[spanish]{babel}
-\usepackage{graphicx}
 \usepackage{amsmath}
 \usepackage{amssymb}
-\usepackage{hyperref}
-\usepackage{listings}
-\usepackage{color}
 \usepackage{geometry}
 \usepackage{fancyhdr}
 \usepackage{titlesec}
-\usepackage{float}
-\usepackage{tikz}
-\usetikzlibrary{shapes,shapes.geometric,arrows,positioning,babel}
+\usepackage{xcolor}
+\usepackage{hyperref}
 
 % Configuración de márgenes
 \geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
 
-% Configuración de colores para código
-\definecolor{codegreen}{rgb}{0,0.6,0}
-\definecolor{codegray}{rgb}{0.5,0.5,0.5}
-\definecolor{codepurple}{rgb}{0.58,0,0.82}
-\definecolor{backcolour}{rgb}{0.96,0.96,0.94}
-
-\lstdefinestyle{mystyle}{
-    backgroundcolor=\color{backcolour},   
-    commentstyle=\color{codegreen},
-    keywordstyle=\color{blue}\bfseries,
-    numberstyle=\tiny\color{codegray},
-    stringstyle=\color{codepurple},
-    basicstyle=\ttfamily\footnotesize,
-    breakatwhitespace=false,         
-    breaklines=true,                 
-    captionpos=b,                    
-    keepspaces=true,                 
-    numbers=left,                    
-    numbersep=5pt,                  
-    showspaces=false,                
-    showstringspaces=false,
-    showtabs=false,                  
-    tabsize=2
-}
-\lstset{style=mystyle}
-
 % Encabezado y pie de página
 \pagestyle{fancy}
 \fancyhf{}
-\lhead{\small Proyecto Final - Graficación por Computadora}
-\rhead{\small Enfoque Matemático y Métrico}
+\lhead{\small Especificación Técnica: Mapeo Cartográfico}
+\rhead{\small Next.js + SVG}
 \rfoot{\thepage}
-\lfoot{\small Proyecto de Mapeo Cartográfico Isótropo}
+\lfoot{\small Fundamento Matemático Isótropo}
 
 % Estilo de títulos
 \titleformat{\section}
@@ -62,12 +31,11 @@
 % Título del Documento
 \title{
     \vspace{2cm}
-    \textbf{Modelado Matemático, Transformaciones Afines y Proyección Conforme Local para un Sistema Cartográfico Vectorial}\\
-    \large{Materia: Graficación por Computadora}\\
+    \textbf{Especificación Técnica Completa:\\Sistema de Mapeo Cartográfico Local e Interactivo (Next.js + SVG)}\\
     \vspace{1cm}
 }
 \author{
-    \textbf{Desarrollador:} Edgarsc0\\
+    \textbf{Autor:} Edgarsc0\\
     \small{Repositorio: \href{https://github.com/Edgarsc0/proyecto_computer_graphics}{Edgarsc0/proyecto\_computer\_graphics}}
 }
 \date{\today}
@@ -77,296 +45,95 @@
 \maketitle
 \thispagestyle{empty}
 \newpage
-\tableofcontents
-\newpage
 
-\section{Introducción}
+Este documento contiene los fundamentos matemáticos, la deducción geométrica, el conjunto de datos iniciales y los requerimientos funcionales para construir una aplicación web interactiva utilizando Next.js (React) con JavaScript puro (ES6+). El objetivo del sistema es proyectar coordenadas geográficas reales (WGS84) en un lienzo bidimensional SVG de forma isótropa y conforme localmente.
 
-\subsection{Contexto general}
-El modelado geométrico y la representación de datos del mundo real sobre un plano de visualización bidimensional constituye uno de los problemas históricos y fundamentales de la graficación por computadora. Cuando el objeto de estudio es una porción de la superficie terrestre, el dominio geométrico de entrada deja de ser euclidiano plano para convertirse en geodésico sobre un elipsoide de revolución. La conversión de este espacio curvo a un lienzo de píxeles digital requiere un pipeline riguroso de transformaciones cartográficas y afines.
+\section{Fundamento Matemático y Deducción de la Transformación}
 
-\subsection{Importancia de la graficación matemática en el problema}
-El renderizado arbitrario de coordenadas geográficas en pantalla suele sufrir de distorsiones de aspecto (anisotropía). Debido a la forma esferoidal de la Tierra, un grado de longitud medido en metros se acorta progresivamente a medida que nos desplazamos desde el ecuador hacia los polos, mientras que un grado de latitud permanece prácticamente constante. Si se mapean directamente las coordenadas geodésicas de latitud y longitud a los ejes cartesianos $X$ e $Y$ de la pantalla, las proporciones visuales de los edificios se deforman (se estiran o aplastan). 
-Para resolver esto, la graficación matemática debe aplicar una \textbf{proyección conforme local}, asegurando que el factor de escala sea idéntico en todas las direcciones (isotropía métrica), preservando los ángulos locales y las formas originales de las estructuras del campus.
+\subsection{El Vector de Posición Geocéntrico ($\mathbb{R}^3$)}
 
-\subsection{Descripción breve del proyecto}
-Este proyecto implementa un sistema interactivo de graficación vectorial que proyecta matemáticamente el campus escolar sobre un lienzo SVG de resolución infinita. El sistema permite al usuario modificar la topología en tiempo real mediante transformaciones afines interactivas (zoom, traslación de cámara, arrastre de vértices con cursor o gestos táctiles multitáctiles) y persistir estas geometrías complejas mediante operaciones CRUD.
+La superficie de la Tierra se parametriza en un sistema cartesiano tridimensional ECEF (Earth-Centered, Earth-Fixed) mediante el siguiente vector de posición, donde $r_t$ representa el radio medio terrestre ($\approx 6,371,000\text{ m}$), $\alpha$ la latitud y $\beta$ la longitud:
+\begin{equation}
+    \mathbf{V}(\alpha,\beta) = r_t \cos(\alpha)\cos(\beta)\mathbf{\hat{i}} + r_t \cos(\alpha)\sin(\beta)\mathbf{\hat{j}} + r_t \sin(\alpha)\mathbf{\hat{k}}
+\end{equation}
 
-\section{Planteamiento del problema}
+A partir de este vector, se deduce que las distancias máximas reales del terreno en metros para un área acotada son:
+\begin{equation}
+    N_{max} = r_t (\alpha_{max} - \alpha_{min})
+\end{equation}
+para el eje Norte-Sur, y:
+\begin{equation}
+    E_{max} = r_t \cos(\alpha_0)(\beta_{max} - \beta_{min})
+\end{equation}
+para el eje Este-Oeste (donde $\alpha$, $\beta$ están expresados en radianes).
 
-\subsection{Descripción detallada del problema}
-El modelado e interacción con mapas a nivel de submétrica local requiere de un lienzo interactivo altamente configurable. Las soluciones genéricas basadas en mapas de bits pre-renderizados no permiten realizar manipulaciones directas sobre los vértices individuales de los polígonos. Para lograr esto, se necesita representar la geometría del campus mediante listas de vértices geodésicos en formato WGS84, y proyectarlas a un lienzo digital euclidiano plano de manera conforme, resolviendo el problema de la deformación por latitud y permitiendo interactuar con los nodos vectoriales mediante operaciones geométricas inmediatas.
+\subsection{Dimensión del Viewport ($H$) bajo Condición de Isotropía}
 
-\subsection{Situación actual y justificación matemática}
-Actualmente, el lienzo local de graficación requiere un mapeo que represente de forma fidedigna las proporciones métricas reales. Si el Edificio 1 mide $50\text{ m} \times 20\text{ m}$ en la realidad, la relación de aspecto en la pantalla debe ser exactamente de $2.5:1$. Esto exige que los factores de escala vertical y horizontal en metros por píxel se igualen de manera analítica en la latitud local del campus ($\phi_0 \approx 19.504^\circ\text{ N}$).
+El principio de isotropía exige que la escala del mapa sea idéntica en ambas direcciones de la pantalla para evitar que los objetos se deformen (se estiren o se aplasten). Definimos las escalas en píxeles por metro como:
+\begin{equation}
+    k_x = \frac{W}{E_{max}}, \quad k_y = \frac{H}{N_{max}}
+\end{equation}
 
-\subsection{Alcances y limitaciones}
+Para evitar distorsiones, imponemos la igualdad de escalas $k_x = k_y$:
+\begin{equation}
+    \frac{W}{E_{max}} = \frac{H}{N_{max}} \implies H = W \cdot \frac{N_{max}}{E_{max}}
+\end{equation}
+
+Sustituyendo las distancias métricas del terreno:
+\begin{equation}
+    H = W \cdot \frac{r_t \cdot (\alpha_{max} - \alpha_{min})}{r_t \cdot \cos(\alpha_0) \cdot (\beta_{max} - \beta_{min})}
+\end{equation}
+
+Al simplificar, el radio de la Tierra ($r_t$) se cancela algebraicamente de forma exacta, obteniendo la relación estricta para la altura del viewBox:
+\begin{equation}
+    H = W \cdot \frac{\alpha_{max} - \alpha_{min}}{(\beta_{max} - \beta_{min}) \cos(\alpha_0)}
+\end{equation}
+
+Donde $\alpha_0$ es la latitud central del campus:
+\begin{equation}
+    \alpha_0 = \frac{\alpha_{max} + \alpha_{min}}{2}
+\end{equation}
+
+\subsection{Demostración de las Ecuaciones de la Transformación $T(\beta,\alpha) \to (x,y)$}
+
+Al mapear las distancias a las proporciones de píxeles del lienzo SVG ($W,H$), el radio de la Tierra se anula en ambas componentes:
+
+\begin{enumerate}
+    \item \textbf{Componente Horizontal ($x$):} Multiplica la razón de escala del lienzo ($k_x$) por la distancia lineal recorrida desde el límite Oeste ($\beta_{min}$):
+    \begin{align}
+        x(\beta) &= k_x \cdot \text{Distancia}_E \nonumber \\
+        x(\beta) &= \frac{W}{r_t \cos(\alpha_0)(\beta_{max} - \beta_{min})} \cdot \left[ r_t \cos(\alpha_0)(\beta - \beta_{min}) \right] \nonumber \\
+        x(\beta) &= W \cdot \frac{\beta - \beta_{min}}{\beta_{max} - \beta_{min}}
+    \end{align}
+
+    \item \textbf{Componente Vertical ($y$):} Dado que el eje Y del SVG crece hacia abajo en las pantallas, calculamos la distancia descendente desde el límite Norte ($\alpha_{max}$):
+    \begin{align}
+        y(\alpha) &= k_y \cdot \text{Distancia}_N \nonumber \\
+        y(\alpha) &= \frac{H}{r_t (\alpha_{max} - \alpha_{min})} \cdot \left[ r_t (\alpha_{max} - \alpha) \right] \nonumber \\
+        y(\alpha) &= H \cdot \frac{\alpha_{max} - \alpha}{\alpha_{max} - \alpha_{min}}
+    \end{align}
+\end{enumerate}
+
+\section{Universo Geográfico del Campus (Bounding Box)}
+
+Los límites absolutos extraídos del polígono envolvente de la escuela definen las constantes de la transformación:
 \begin{itemize}
-    \item \textbf{Alcance:} Pipeline matemático completo de proyección conforme local, transformaciones afines 2D mediante álgebra de matrices homogéneas $3\times3$, cálculo analítico de centroides de polígonos, algoritmos de detección de cercanía euclidiana mínima y validación por geofencing.
-    \item \textbf{Limitaciones:} El modelo es bidimensional (plano horizontal local). No se contemplan transformaciones de proyección en perspectiva 3D ni distorsiones de relieve topográfico (altitud $Z$).
+    \item \textbf{Latitud Máxima ($\alpha_{max}$):} $19.506085642577684^\circ$
+    \item \textbf{Latitud Mínima ($\alpha_{min}$):} $19.501672871991357^\circ$
+    \item \textbf{Longitud Máxima ($\beta_{max}$):} $-99.14538442387669^\circ$
+    \item \textbf{Longitud Mínima ($\beta_{min}$):} $-99.14882990272824^\circ$
 \end{itemize}
 
-\section{Objetivos}
-
-\subsection{Objetivo general}
-Diseñar e implementar el modelo matemático y el pipeline de transformaciones geométricas necesarias para proyectar, renderizar e interactuar de forma conforme e isótropa con la topología del campus escolar sobre un lienzo digital de graficación vectorial.
-
-\subsection{Objetivos específicos}
-\begin{enumerate}
-    \item Deducir analíticamente y programar la ecuación de escalamiento isótropo local basada en la latitud media del campus para compensar el achatamiento cosenoidal terrestre.
-    \item Modelar en coordenadas homogéneas las transformaciones afines de traslación, escalado isotrópico y zoom centrado en un punto focal arbitrario para la cámara virtual.
-    \item Implementar algoritmos de geometría computacional para la manipulación de polígonos, incluyendo el cálculo de distancias métricas por trigonometría esférica (Haversine) y la localización de vértices por minimización de distancia euclidiana.
-    \item Desarrollar la lógica matemática para geofencing en tiempo real, validando la inclusión del usuario en un espacio geodésico delimitado.
-\end{enumerate}
-
-\section{Marco teórico y Formulación Matemática}
-
-\subsection{Geometría de la Tierra y Proyección Conforme Local}
-La Tierra se modela mediante el sistema WGS84 como un elipsoide. Sin embargo, para un área local pequeña como el campus, la superficie puede aproximarse como una esfera local de radio $R \approx 6,371,000\text{ m}$. 
-Una coordenada geodésica se compone de latitud $\phi$ y longitud $\lambda$. La distancia métrica real sobre la superficie terrestre para un incremento de latitud $\Delta\phi$ (en radianes) es:
-\begin{equation}
-    D_y = R \cdot \Delta\phi
-\end{equation}
-Mientras que la distancia métrica para un incremento de longitud $\Delta\lambda$ (en radianes) depende de la latitud local debido a la convergencia de los meridianos hacia los polos:
-\begin{equation}
-    D_x = R \cdot \Delta\lambda \cdot \cos(\phi)
-\end{equation}
-
-Si definimos los límites del campus mediante un rectángulo delimitador: $\phi \in [\phi_{min}, \phi_{max}]$ y $\lambda \in [\lambda_{min}, \lambda_{max}]$, y queremos proyectarlo sobre un lienzo de visualización digital de dimensiones $W \times H$ píxeles, definimos las transformaciones de mapeo lineales de forma que el factor de escala sea idéntico en ambos ejes.
-
-\subsubsection{Demostración Analítica del Alto del Lienzo ($H$) Isótropo}
-Para asegurar que la proyección sea conforme (sin distorsión de aspecto), la escala horizontal $S_x$ (metros por píxel) y la escala vertical $S_y$ (metros por píxel) deben ser estrictamente iguales:
-\begin{equation}
-    S_x = S_y
-\end{equation}
-Donde la escala horizontal se define utilizando la latitud media $\phi_0 = \frac{\phi_{max} + \phi_{min}}{2}$:
-\begin{equation}
-    S_x = \frac{R \cdot \Delta\lambda \cdot \cos(\phi_0) \cdot \frac{\pi}{180}}{W}
-\end{equation}
-Y la escala vertical se define como:
-\begin{equation}
-    S_y = \frac{R \cdot \Delta\phi \cdot \frac{\pi}{180}}{H}
-\end{equation}
-Igualando ambas expresiones para forzar la isotropía:
-\begin{equation}
-    \frac{R \cdot \Delta\lambda \cdot \cos(\phi_0) \cdot \frac{\pi}{180}}{W} = \frac{R \cdot \Delta\phi \cdot \frac{\pi}{180}}{H}
-\end{equation}
-Simplificando los términos constantes $R \cdot \frac{\pi}{180}$ de ambos lados:
-\begin{equation}
-    \frac{\Delta\lambda \cdot \cos(\phi_0)}{W} = \frac{\Delta\phi}{H}
-\end{equation}
-Despejando analíticamente la altura $H$ requerida para el viewport:
-\begin{equation}
-    H = W \cdot \frac{\Delta\phi}{\Delta\lambda \cdot \cos(\phi_0)}
-\end{equation}
-Esta ecuación fundamental es la que garantiza de manera matemática que cualquier figura geométrica (polígono) proyectada en pantalla mantendrá sus proporciones y ángulos idénticos a los del mundo real.
-
-\subsection{Álgebra Matricial de las Transformaciones Afines (Cámara Virtual)}
-Para permitir al usuario desplazarse e interactuar con el mapa, implementamos transformaciones afines en 2D utilizando coordenadas homogéneas. Un punto $P$ en el espacio del canvas se representa como el vector de columna:
-\begin{equation}
-    P = \begin{bmatrix} x \\ y \\ 1 \end{bmatrix}
-\end{equation}
-
-\subsubsection{Traslación y Escalado del Lienzo}
-La traslación por un vector $\vec{t} = [t_x, t_y]^T$ y el escalado uniforme por un factor $s$ se modelan mediante la matriz de transformación afín $M$:
-\begin{equation}
-    M = T(t_x, t_y) \cdot S(s) = \begin{bmatrix} 1 & 0 & t_x \\ 0 & 1 & t_y \\ 0 & 0 & 1 \end{bmatrix} \begin{bmatrix} s & 0 & 0 \\ 0 & s & 0 \\ 0 & 0 & 1 \end{bmatrix} = \begin{bmatrix} s & 0 & t_x \\ 0 & s & t_y \\ 0 & 0 & 1 \end{bmatrix}
-\end{equation}
-El punto transformado $P' = [x', y', 1]^T$ en el viewport es:
-\begin{equation}
-    P' = M \cdot P \implies \begin{bmatrix} x' \\ y' \\ 1 \end{bmatrix} = \begin{bmatrix} s \cdot x + t_x \\ s \cdot y + t_y \\ 1 \end{bmatrix}
-\end{equation}
-
-\subsubsection{Demostración Matemática del Zoom Centrado en un Punto Focal}
-Cuando el usuario hace zoom utilizando la rueda del ratón o el pellizco táctil en un punto focal específico $F(x_f, y_f)$ (por ejemplo, el cursor o el centro de los dedos), no queremos que el mapa se amplíe respecto al origen $(0,0)$. El punto $F$ debe permanecer estrictamente invariante antes y después del escalado.
-Esto se logra mediante la secuencia de transformaciones:
-\begin{enumerate}
-    \item Trasladar el punto focal al origen: $T(-x_f, -y_f)$.
-    \item Aplicar el factor de escalamiento relativo $m = \frac{s_{nuevo}}{s_{anterior}}$: $S(m)$.
-    \item Trasladar de vuelta al punto focal original: $T(x_f, y_f)$.
-\end{enumerate}
-La matriz resultante de la transformación de zoom focal $M_{focal}$ es:
-\begin{equation}
-    M_{focal} = T(x_f, y_f) \cdot S(m) \cdot T(-x_f, -y_f)
-\end{equation}
-Multiplicando las matrices paso a paso:
-\begin{equation}
-    M_{focal} = \begin{bmatrix} 1 & 0 & x_f \\ 0 & 1 & y_f \\ 0 & 0 & 1 \end{bmatrix} \left( \begin{bmatrix} m & 0 & 0 \\ 0 & m & 0 \\ 0 & 0 & 1 \end{bmatrix} \begin{bmatrix} 1 & 0 & -x_f \\ 0 & 1 & -y_f \\ 0 & 0 & 1 \end{bmatrix} \right)
-\end{equation}
-\begin{equation}
-    M_{focal} = \begin{bmatrix} 1 & 0 & x_f \\ 0 & 1 & y_f \\ 0 & 0 & 1 \end{bmatrix} \begin{bmatrix} m & 0 & -m \cdot x_f \\ 0 & m & -m \cdot y_f \\ 0 & 0 & 1 \end{bmatrix}
-\end{equation}
-\begin{equation}
-    M_{focal} = \begin{bmatrix} m & 0 & (1-m)x_f \\ 0 & m & (1-m)y_f \\ 0 & 0 & 1 \end{bmatrix}
-\end{equation}
-Al aplicar esta matriz a cualquier punto del lienzo $P$:
-\begin{equation}
-    \begin{bmatrix} x' \\ y' \\ 1 \end{bmatrix} = \begin{bmatrix} m \cdot x + (1-m)x_f \\ m \cdot y + (1-m)y_f \\ 1 \end{bmatrix}
-\end{equation}
-Comprobamos la invariancia del punto focal evaluando $P = F$:
-\begin{equation}
-    x_f' = m \cdot x_f + (1-m)x_f = m \cdot x_f + x_f - m \cdot x_f = x_f
-\end{equation}
-Esto demuestra analíticamente la invariancia del foco, lo cual es fundamental para una interacción interactiva intuitiva y sin saltos visuales bruscos.
-
-\subsection{Geometría Computacional del Modelado Poligonal y Métricas}
-
-\subsubsection{Trigonometría Esférica (Distancia de Haversine)}
-Para calcular el perímetro real de las estructuras, no se puede aplicar la distancia euclidiana simple sobre las coordenadas crudas de latitud y longitud. Se debe resolver la distancia geodésica sobre la esfera unitaria. Dadas dos coordenadas $(\phi_1, \lambda_1)$ y $(\phi_2, \lambda_2)$ en grados, calculamos la distancia métrica $d$ mediante la fórmula de Haversine:
-\begin{equation}
-    d = 2R \cdot \text{arcsin}\left(\sqrt{\sin^2\left(\frac{\Delta\phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta\lambda}{2}\right)}\right)
-\end{equation}
-Donde $\Delta\phi = (\phi_2 - \phi_1)\frac{\pi}{180}$ y $\Delta\lambda = (\lambda_2 - \lambda_1)\frac{\pi}{180}$.
-
-\subsubsection{Cálculo de Centroides de Polígonos}
-Para colocar etiquetas de texto estéticas en el centro geométrico de cada estructura, se calcula el centroide $C(\bar{x}, \bar{y})$ del conjunto de $n$ vértices del polígono. Matemáticamente se utiliza la media aritmética de sus componentes espaciales:
-\begin{equation}
-    \bar{x} = \frac{1}{n}\sum_{i=0}^{n-1} x_i, \quad \bar{y} = \frac{1}{n}\sum_{i=0}^{n-1} y_i
-\end{equation}
-Esto proporciona el centro de gravedad del polígono convexo para la colocación óptima de textos explicativos.
-
-\subsubsection{Detección del Vértice más Cercano (Minimización Euclidiana)}
-Cuando el usuario hace clic o toca la pantalla en una coordenada transformada localmente $M(x_m, y_m)$, el sistema debe determinar qué vértice $v_i$ de qué estructura desea arrastrar. Para ello, se formula el problema de minimización:
-\begin{equation}
-    i_{\text{seleccionado}} = \arg\min_{i} \left\{ (x_{v_i} - x_m)^2 + (y_{v_i} - y_m)^2 \right\}
-\end{equation}
-Dado que la función raíz cuadrada es monótonamente creciente, la minimización de la distancia euclidiana equivale a la minimización del cuadrado de la distancia, evitando el costoso cálculo de raíces cuadradas por hardware en el bucle interactivo de renderizado.
-
-\subsection{Geofencing Matemático (Teorema de la Curva de Jordan)}
-El geofencing en tiempo real para verificar la presencia del usuario dentro del campus escolar se realiza mediante una doble capa de validación espacial:
-\begin{enumerate}
-    \item \textbf{Criba por Bounding Box (Rectángulo Delimitador):}
-    Una coordenada GPS $(\phi_{gps}, \lambda_{gps})$ se considera inicialmente válida si satisface el sistema de desigualdades lineales:
-    \begin{equation}
-        \phi_{min} \le \phi_{gps} \le \phi_{max} \quad \land \quad \lambda_{min} \le \lambda_{gps} \le \lambda_{max}
-    \end{equation}
-    \item \textbf{Ray-Casting (Teorema de la Curva de Jordan):}
-    Para polígonos arbitrarios complejos no convexos (como la frontera exacta de la escuela), se proyecta un rayo semi-infinito en la dirección horizontal positiva desde el punto $P(x_p, y_p)$ evaluado. Se cuenta el número de intersecciones con los segmentos de recta del polígono. 
-    Para un segmento delimitado por los vértices $V_i(x_i, y_i)$ y $V_{i+1}(x_{i+1}, y_{i+1})$, existe una intersección con el rayo si y solo si se cumplen las condiciones lógicas y algebraicas:
-    \begin{equation}
-        (y_i > y_p) \neq (y_{i+1} > y_p) \quad \land \quad x_p < x_i + \frac{(x_{i+1} - x_i)(y_p - y_i)}{y_{i+1} - y_i}
-    \end{equation}
-    Si la suma total de intersecciones es un número impar, el punto está matemáticamente en el interior del polígono; si es par, está en el exterior.
-\end{enumerate}
-
-\section{Propuesta de solución}
-La solución consta de un visualizador vectorial interactivo en tiempo real estructurado de la siguiente manera:
+\subsection{Parámetros Calculados del Lienzo}
 \begin{itemize}
-    \item \textbf{Motor de Transformación Gráfica (Frontend):} Construido en JavaScript React sobre un lienzo SVG. Controla los estados geométricos vectoriales, las transformaciones afines de cámara y la detección táctil.
-    \item \textbf{Capa de Persistencia (Backend y DB):} Django REST Framework y PostgreSQL (Neon DB), actuando únicamente como un repositorio pasivo de coordenadas geodésicas crudas en formato WGS84 para mantener la consistencia del mapa.
+    \item $\Delta\alpha = 0.004412770586327^\circ$
+    \item $\Delta\beta = 0.003445478851546^\circ$
+    \item $\alpha_0 = 19.50387925728452^\circ \implies \cos(\alpha_{0,\text{rad}}) \approx 0.942620925$
 \end{itemize}
 
-\section{Desarrollo del proyecto}
-
-\subsection{Análisis de Requerimientos Matemáticos}
-\begin{itemize}
-    \item **Transformación de entrada:** Recepción de coordenadas esféricas del mundo real y mapeo conforme al lienzo.
-    \item **Control de zoom dinámico:** Operaciones de escala y paneo que preservan la coincidencia de píxeles locales al hacer zoom focal.
-    \item **Validación espacial (Geofencing):** Validación estricta de las desigualdades geográficas locales para denegar capturas GPS erróneas.
-\end{itemize}
-
-\subsection{Diseño del Pipeline de Transformación Gráfica}
-El flujo matemático que siguen los datos geométricos desde su lectura hasta su renderizado en pantalla es el siguiente:
-
-\begin{figure}[H]
-\centering
-\begin{tikzpicture}[node distance=2.5cm, >=stealth,
-    stepbox/.style={rectangle, draw, fill=orange!10, text width=4cm, text centered, rounded corners, minimum height=1.2cm}
-]
-    \node [stepbox] (geo) {\textbf{Entrada Geodésica} \\ WGS84 $(\phi, \lambda)$ \\ Base de Datos Neon};
-    \node [stepbox, right=2cm of geo] (proj) {\textbf{Mapeo Conforme} \\ Isotropía local \\ $H = f(\cos\phi_0)$};
-    \node [stepbox, right=2cm of proj] (view) {\textbf{Cámara Virtual} \\ Transformación Afín \\ $M_{focal} \cdot P$};
-    
-    \draw [->, ultra thick, blue] (geo) -- node[above] {\small $T_{proj}$} (proj);
-    \draw [->, ultra thick, blue] (proj) -- node[above] {\small $M_{affine}$} (view);
-\end{tikzpicture}
-\caption{Pipeline del Mapeo Geodésico y Transformaciones de Pantalla.}
-\label{fig:pipeline_completo}
-\end{figure}
-
-\subsection{Construcción (Implementación de Algoritmos)}
-
-\subsubsection{Transformación de Coordenadas Geodésicas a Píxeles}
-La implementación en código de las ecuaciones algebraicas de proyección de coordenadas a coordenadas de lienzo $X, Y$ se realiza de la siguiente manera:
-\begin{lstlisting}[language=Java, caption={Implementación matemática del mapeo isótropo}]
-const LAT_MAX = 19.506085642577684;
-const LAT_MIN = 19.501672871991357;
-const LON_MAX = -99.14538442387669;
-const LON_MIN = -99.14882990272824;
-
-const W = 1000;
-const DELTA_LAT = LAT_MAX - LAT_MIN;
-const DELTA_LON = LON_MAX - LON_MIN;
-const LAT_0_RAD = ((LAT_MAX + LAT_MIN) / 2) * Math.PI / 180;
-
-// Alto del canvas H calculado analiticamente
-const H = W * (DELTA_LAT / (DELTA_LON * Math.cos(LAT_0_RAD)));
-
-const toX = (lon) => {
-  return (lon - LON_MIN) * (W / DELTA_LON);
-};
-
-const toY = (lat) => {
-  return (LAT_MAX - lat) * (H / DELTA_LAT);
-};
-\end{lstlisting}
-
-\subsubsection{Algoritmo de Interacción Zoom Multitáctil}
-El control gestual en dispositivos móviles requiere seguir matemáticamente los puntos de contacto táctil para modificar tanto el escalamiento uniforme como las traslaciones de cámara:
-\begin{lstlisting}[language=Java, caption={Ecuaciones de escalado y traslación multitáctil en tiempo real}]
-const handleTouchMove = (e) => {
-  if (e.touches.length === 2 && touchStartDistRef.current && touchStartRef.current) {
-    const t1 = e.touches[0];
-    const t2 = e.touches[1];
-    
-    // Distancia euclidiana actual entre los dos dedos
-    const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
-    const startDist = touchStartDistRef.current;
-    
-    if (startDist > 0) {
-      const scale = currentDist / startDist;
-      const initialZoom = touchStartZoomRef.current;
-      const nextZoom = Math.max(0.4, Math.min(10, initialZoom * scale));
-      
-      const { midX, midY, panX, panY } = touchStartRef.current;
-      
-      // Traslacion compensatoria para fijar el baricentro del gesto
-      const newPanX = midX - (midX - panX) * (nextZoom / initialZoom);
-      const newPanY = midY - (midY - panY) * (nextZoom / initialZoom);
-      
-      setZoom(nextZoom);
-      setPan({ x: newPanX, y: newPanY });
-    }
-  }
-};
-\end{lstlisting}
-
-\subsection{Pruebas Matemáticas y Resultados}
-Se validó la precisión geométrica midiendo la deformación de las figuras en diferentes niveles de zoom y desplazamientos extremos:
-\begin{table}[H]
-\centering
-\begin{tabular}{|l|c|c|r|}
-\hline
-\textbf{Prueba de Relación} & \textbf{Medición Real} & \textbf{Medición en Canvas} & \textbf{Error Relativo} \\ \hline
-Edificio 1 (Ancho/Alto) & $62.5\text{ m} / 25.0\text{ m} = 2.50$ & $125.0\text{ px} / 50.0\text{ px} = 2.50$ & $0.00\%$ \\ \hline
-Ángulo Esquina Edificio 2 & $90.00^\circ$ & $90.00^\circ$ & $0.00\%$ \\ \hline
-Perímetro Edificio 3 & $205.40\text{ m}$ & $205.38\text{ m}$ (Haversine) & $0.009\%$ \\ \hline
-Preservación de Área & $2500\text{ m}^2$ & $2499.78\text{ m}^2$ & $0.008\%$ \\ \hline
-\end{tabular}
-\caption{Fidelidad Cartográfica y Errores de Proyección Métrica.}
-\label{tab:precision}
-\end{table}
-
-\section{Discusión y Conclusiones}
-La formulación matemática basada en la latitud media compensada por el coseno permite un mapeo perfecto de coordenadas WGS84 a píxeles de pantalla sin requerir bibliotecas externas complejas de proyección cartográfica como Proj4. El uso de matrices homogéneas $3\times3$ es el estándar óptimo en la industria gráfica para manipular la visualización de cámaras virtuales 2D. 
-
-El geofencing matemático por Bounding Box y Ray-Casting demostró ser sumamente robusto en las pruebas de simulación, capturando de forma instantánea e interrumpiendo el flujo de geolocalización cuando el punto cae fuera de las fronteras topológicas establecidas. En conclusión, el desarrollo del sistema cumple con los criterios de exactitud isométrica e interactividad fluida requeridos para la simulación cartográfica en la materia de Graficación por Computadora.
-
-\section{Referencias}
-\begin{enumerate}
-    \item J. D. Foley, A. van Dam, S. K. Feiner, and J. F. Hughes, \textit{Computer Graphics: Principles and Practice}, 2nd ed. Boston, MA: Addison-Wesley, 1996.
-    \item W. Tobler, ``A classification of map projections,'' \textit{Annals of the Association of American Geographers}, vol. 52, no. 2, pp. 167--175, 1962.
-    \item R. W. Sinnott, ``Virtues of the Haversine,'' \textit{Sky and Telescope}, vol. 68, no. 2, p. 159, 1984.
-\end{enumerate}
+Fijando un ancho de $W=1000$, la altura calculada bajo isotropía es $H=1358.71$. El contenedor debe inicializarse con el atributo:
+\begin{center}
+    \texttt{viewBox="0 0 1000 1358.71"}
+\end{center}
 
 \end{document}
