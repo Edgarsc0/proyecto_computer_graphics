@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "MAPPA - Sistema de Mapeo Cartográfico Local e Interactivo",
-  description: "Aplicación interactiva de proyección conforme y conforme local de coordenadas geográficas WGS84 sobre lienzo SVG isótropo del campus escolar.",
+  title: "Proyecto Computer Graphics",
+  description: "Proyecto Computer Graphics - Aplicación interactiva de proyección conforme y conforme local de coordenadas geográficas WGS84 sobre lienzo SVG isótropo del campus escolar.",
 };
 
 export default function RootLayout({ children }) {

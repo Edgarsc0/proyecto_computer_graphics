@@ -174,6 +174,11 @@ export default function Home() {
   const zoomRef = useRef(zoom);
   const panRef = useRef(pan);
 
+  const touchStartRef = useRef(null);
+  const touchStartDistRef = useRef(null);
+  const touchStartZoomRef = useRef(null);
+  const lastTouchTimeRef = useRef(0);
+
   useEffect(() => {
     zoomRef.current = zoom;
     panRef.current = pan;
@@ -390,6 +395,184 @@ export default function Home() {
       const lat = toLat(y);
       return { x, y, lat, lon };
     }
+  };
+
+  const handleTouchStart = (e) => {
+    if (e.touches.length === 1) {
+      // Check for double tap
+      const now = Date.now();
+      const DOUBLE_TAP_DELAY = 300;
+      if (now - lastTouchTimeRef.current < DOUBLE_TAP_DELAY) {
+        // Double tap! Zoom in on the touch point
+        const touch = e.touches[0];
+        const rect = svgRef.current.getBoundingClientRect();
+        const svgX = ((touch.clientX - rect.left) / rect.width) * W;
+        const svgY = ((touch.clientY - rect.top) / rect.height) * H;
+        
+        const currentZoom = zoomRef.current;
+        const currentPan = panRef.current;
+        const nextZoom = Math.min(10, currentZoom * 1.5);
+        
+        const newPanX = svgX - (svgX - currentPan.x) * (nextZoom / currentZoom);
+        const newPanY = svgY - (svgY - currentPan.y) * (nextZoom / currentZoom);
+        
+        setZoom(nextZoom);
+        setPan({ x: newPanX, y: newPanY });
+        
+        lastTouchTimeRef.current = 0; // reset
+        return;
+      }
+      lastTouchTimeRef.current = now;
+
+      // Single touch drag map
+      const touch = e.touches[0];
+      setIsDragging(true);
+      setDragStart({ x: touch.clientX, y: touch.clientY });
+      setStartPan({ ...panRef.current });
+      setHasDragged(false);
+    } else if (e.touches.length === 2) {
+      // Two touches: pinch-to-zoom
+      setIsDragging(false);
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const dist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      touchStartDistRef.current = dist;
+      touchStartZoomRef.current = zoomRef.current;
+      
+      const rect = svgRef.current.getBoundingClientRect();
+      const midClientX = (t1.clientX + t2.clientX) / 2;
+      const midClientY = (t1.clientY + t2.clientY) / 2;
+      const svgX = ((midClientX - rect.left) / rect.width) * W;
+      const svgY = ((midClientY - rect.top) / rect.height) * H;
+      touchStartRef.current = {
+        midX: svgX,
+        midY: svgY,
+        panX: panRef.current.x,
+        panY: panRef.current.y
+      };
+    }
+  };
+
+  const handleTouchMove = (e) => {
+    if (draggedVertex) {
+      const touch = e.touches[0];
+      const coords = getLocalCoords(touch.clientX, touch.clientY);
+      if (!coords) return;
+
+      const updated = buildings.map(b => {
+        if (b.id === draggedVertex.edificioId) {
+          const newCoords = [...b.rawCoordinates];
+          newCoords[draggedVertex.index] = [coords.lat, coords.lon];
+          return {
+            ...b,
+            rawCoordinates: newCoords,
+            svgPoints: generateSvgPointsStr(newCoords)
+          };
+        }
+        return b;
+      });
+
+      setBuildings(updated);
+      
+      setSelectedVertex({
+        edificioId: draggedVertex.edificioId,
+        index: draggedVertex.index,
+        lat: coords.lat,
+        lon: coords.lon,
+        x: toX(coords.lon),
+        y: toY(coords.lat)
+      });
+      setEditLat(coords.lat.toFixed(8));
+      setEditLon(coords.lon.toFixed(8));
+      return;
+    }
+
+    if (e.touches.length === 1 && isDragging) {
+      const touch = e.touches[0];
+      const dx = touch.clientX - dragStart.x;
+      const dy = touch.clientY - dragStart.y;
+
+      if (Math.hypot(dx, dy) > 3) {
+        setHasDragged(true);
+      }
+
+      if (!svgRef.current) return;
+      const rect = svgRef.current.getBoundingClientRect();
+      const svgDx = (dx / rect.width) * W;
+      const svgDy = (dy / rect.height) * H;
+
+      setPan({
+        x: startPan.x + svgDx,
+        y: startPan.y + svgDy
+      });
+    } else if (e.touches.length === 2 && touchStartDistRef.current && touchStartRef.current) {
+      const t1 = e.touches[0];
+      const t2 = e.touches[1];
+      const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+      const startDist = touchStartDistRef.current;
+      
+      if (startDist > 0) {
+        const scale = currentDist / startDist;
+        const initialZoom = touchStartZoomRef.current;
+        const nextZoom = Math.max(0.4, Math.min(10, initialZoom * scale));
+        
+        const { midX, midY, panX, panY } = touchStartRef.current;
+        
+        const newPanX = midX - (midX - panX) * (nextZoom / initialZoom);
+        const newPanY = midY - (midY - panY) * (nextZoom / initialZoom);
+        
+        setZoom(nextZoom);
+        setPan({ x: newPanX, y: newPanY });
+      }
+    }
+  };
+
+  const handleTouchEnd = async (e) => {
+    if (draggedVertex) {
+      const bId = draggedVertex.edificioId;
+      const b = buildings.find(x => x.id === bId);
+      if (b) {
+        try {
+          await fetch(`${API_BASE_URL}/api/buildings/${b.id}/`, {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              id: b.id,
+              name: b.name,
+              color: b.color,
+              strokeColor: b.strokeColor,
+              strokeWidth: b.strokeWidth,
+              rawCoordinates: b.rawCoordinates
+            })
+          });
+        } catch (err) {
+          console.error("Error saving dragged building to DB:", err);
+        }
+      }
+      setDraggedVertex(null);
+    }
+
+    setIsDragging(false);
+    touchStartDistRef.current = null;
+    touchStartRef.current = null;
+  };
+
+  const handleVertexTouchStart = (e, buildingId, index, lat, lon) => {
+    e.stopPropagation();
+    setDraggedVertex({ edificioId: buildingId, index });
+    setSelectedBuildingId(buildingId);
+    setSelectedVertex({
+      edificioId: buildingId,
+      index,
+      lat,
+      lon,
+      x: toX(lon),
+      y: toY(lat)
+    });
+    setEditLat(lat.toFixed(8));
+    setEditLon(lon.toFixed(8));
   };
 
   const handleMouseDown = (e) => {
@@ -1171,7 +1354,7 @@ export default function Home() {
       <header className="dashboard-header">
         <div className="header-left">
           <Compass className="w-6 h-6 text-indigo-500 animate-spin-slow" />
-          <h1 className="header-title">MAPPA Cartográfica</h1>
+          <h1 className="header-title">Proyecto Computer Graphics</h1>
           <span className="header-badge">ISÓTROPO</span>
           <span className="header-badge">WGS84</span>
         </div>
@@ -1210,7 +1393,13 @@ export default function Home() {
               onMouseDown={handleMouseDown}
               onMouseUp={handleMouseUp}
               onClick={handleSvgClick}
-              style={{ cursor: isDragging ? "grabbing" : "grab" }}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              style={{ 
+                cursor: isDragging ? "grabbing" : "grab",
+                touchAction: "none"
+              }}
             >
               {/* Group wrapper to apply zoom and pan transforms */}
               <g transform={`translate(${pan.x}, ${pan.y}) scale(${zoom})`}>
@@ -1347,6 +1536,7 @@ export default function Home() {
                           strokeWidth={(isDraggedThis ? 3 : 2) / zoom}
                           vectorEffect="non-scaling-stroke"
                           onMouseDown={(e) => handleVertexMouseDown(e, building.id, idx, lat, lon)}
+                          onTouchStart={(e) => handleVertexTouchStart(e, building.id, idx, lat, lon)}
                           onClick={(e) => e.stopPropagation()}
                           title={`Vértice ${idx}: ${lat.toFixed(6)}, ${lon.toFixed(6)}`}
                         />
