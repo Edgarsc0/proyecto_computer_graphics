@@ -114,6 +114,81 @@ Al mapear las distancias a las proporciones de píxeles del lienzo SVG ($W,H$), 
     \end{align}
 \end{enumerate}
 
+\section{Transformación Inversa: $\vec{v} \to (\beta, \alpha)$}
+
+Dado un vector de posición cartesiano tridimensional conocido $\vec{v} = [v_x, v_y, v_z]^T$, es posible recuperar analíticamente las coordenadas geodésicas angulares originales de latitud ($\alpha$) y longitud ($\beta$) mediante las siguientes deducciones geométricas:
+
+\subsection{Cálculo de la Latitud ($\alpha$)}
+Despejando directamente a partir de la componente vertical $v_z = r_t \sin \alpha$:
+\begin{equation}
+    \sin \alpha = \frac{v_z}{r_t} \implies \alpha = \arcsin \left( \frac{v_z}{r_t} \right)
+\end{equation}
+
+\subsection{Cálculo de la Longitud ($\beta$)}
+Para determinar la longitud, se proyecta el vector de posición $\vec{v}$ sobre el plano horizontal ecuatorial $xy$, obteniendo el vector proyectado $\vec{\xi} = [v_x, v_y, 0]$ cuya magnitud $\xi$ es:
+\begin{equation}
+    \xi = |\vec{\xi}| = \sqrt{v_x^2 + v_y^2}
+\end{equation}
+A partir del producto punto entre la proyección $\vec{\xi}$ y el vector unitario director del eje $X$ positivo ($\mathbf{\hat{i}}$), se obtiene la magnitud del ángulo de longitud:
+\begin{equation}
+    \cos|\beta| = \frac{v_x}{\sqrt{v_x^2 + v_y^2}} \implies |\beta| = \arccos \left( \frac{v_x}{\sqrt{v_x^2 + v_y^2}} \right)
+\end{equation}
+Dado que el coseno es una función par ($\cos(-x) = \cos x$), se debe resolver la ambigüedad de signo analizando la componente $v_y$ (que define la dirección de la longitud en los hemisferios Este u Oeste):
+\begin{equation}
+    \beta = \begin{cases} -\arccos \left( \frac{v_x}{\sqrt{v_x^2 + v_y^2}} \right) & \text{si } v_y < 0 \\ \arccos \left( \frac{v_x}{\sqrt{v_x^2 + v_y^2}} \right) & \text{si } v_y \ge 0 \end{cases}
+\end{equation}
+
+\section{Algoritmo de Desplazamiento Geodésico Sobre la Esfera}
+
+Dadas dos ubicaciones geodésicas en la Tierra representadas por sus vectores de posición cartesianos conocidos $\vec{v_1}$ y $\vec{v_2}$ (ambos de magnitud $r_t$), se desea calcular el vector de posición $\vec{v_3}$ de una tercera ubicación situada a una distancia real de arco $\phi$ (en metros) sobre la superficie, partiendo desde $\vec{v_1}$ en la dirección de la cuerda recta $\vec{\xi} = \vec{v_2} - \vec{v_1}$ en $\mathbb{R}^3$.
+
+Para resolver esto, modelamos un triángulo plano $OAB$ en el espacio tridimensional (donde $O$ es el origen del planeta, $A$ es el punto inicial de $\vec{v_1}$, y $B$ es el punto auxiliar de desplazamiento lineal a lo largo de la secante):
+
+\subsection{Cálculo de la Dirección y el Ángulo Central ($\theta$)}
+Definimos el vector unitario director de la cuerda recta en el espacio:
+\begin{equation}
+    \mathbf{\hat{\xi}} = \frac{\vec{v_2} - \vec{v_1}}{|\vec{v_2} - \vec{v_1}|}
+\end{equation}
+El desplazamiento métrico de arco $\phi$ equivale a un ángulo central $\theta$ (en grados) de:
+\begin{equation}
+    \theta = \frac{180 \phi}{\pi r_t}
+\end{equation}
+
+\subsection{Cálculo de los Ángulos Internos del Triángulo $OAB$}
+\begin{enumerate}
+    \item \textbf{Ángulo entre vectores $\vec{v_1}$ y $\vec{\xi}$ ($\gamma_2$):} Se calcula mediante la definición geométrica del producto punto:
+    \begin{equation}
+        \vec{v_1} \cdot \vec{\xi} = r_t |\vec{\xi}| \cos \gamma_2 \implies \gamma_2 = \arccos \left( \frac{\vec{v_1} \cdot \vec{\xi}}{r_t |\vec{\xi}|} \right)
+    \end{equation}
+    \item \textbf{Ángulo interior suplementario ($\gamma_1$):} Dado que $\gamma_1$ y $\gamma_2$ son suplementarios:
+    \begin{equation}
+        \gamma_1 = 180^\circ - \gamma_2 = 180^\circ - \arccos \left( \frac{\vec{v_1} \cdot \vec{\xi}}{r_t |\vec{\xi}|} \right)
+    \end{equation}
+    \item \textbf{Ángulo opuesto en el vértice $B$ ($\sigma$):} Por suma de ángulos internos de un triángulo plano ($180^\circ$):
+    \begin{align}
+        \sigma &= 180^\circ - \gamma_1 - \theta \nonumber \\
+        \sigma &= \arccos \left( \frac{\vec{v_1} \cdot \vec{\xi}}{r_t |\vec{\xi}|} \right) - \theta
+    \end{align}
+\end{enumerate}
+
+\subsection{Escalamiento Lineal de la Cuerda ($k_0$) y Proyección Final}
+Aplicando la Ley de Senos sobre el triángulo plano $OAB$:
+\begin{equation}
+    \frac{r_t}{\sin \sigma} = \frac{k_0}{\sin \theta} \implies k_0 = r_t \frac{\sin \theta}{\sin \sigma}
+\end{equation}
+Sustituyendo los valores angulares deducidos, obtenemos el factor de escala lineal $k_0$:
+\begin{equation}
+    k_0 = r_t \frac{\sin \left( \frac{180 \phi}{\pi r_t} \right)}{\sin \left( \arccos \left( \frac{\vec{v_1} \cdot \vec{\xi}}{r_t |\vec{\xi}|} \right) - \frac{180 \phi}{\pi r_t} \right)}
+\end{equation}
+Calculamos el vector secante intermedio $\vec{w}$ desplazado a lo largo de la cuerda:
+\begin{equation}
+    \vec{w} = \vec{v_1} + k_0 \mathbf{\hat{\xi}}
+\end{equation}
+Finalmente, normalizamos y proyectamos el vector de vuelta a la superficie esférica terrestre (alargándolo al radio $r_t$):
+\begin{equation}
+    \vec{v_3} = r_t \mathbf{\hat{w}} = r_t \frac{\vec{w}}{|\vec{w}|}
+\end{equation}
+
 \section{Universo Geográfico del Campus (Bounding Box)}
 
 Los límites absolutos extraídos del polígono envolvente de la escuela definen las constantes de la transformación:
