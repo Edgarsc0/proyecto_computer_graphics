@@ -110,7 +110,49 @@
 \thispagestyle{empty}
 \newpage
 
-Este documento contiene los fundamentos matemáticos, la deducción geométrica, el conjunto de datos iniciales y los requerimientos funcionales para construir una aplicación web interactiva utilizando Next.js (React) con JavaScript puro (ES6+). El objetivo del sistema es proyectar coordenadas geográficas reales (WGS84) en un lienzo bidimensional SVG de forma isótropa y conforme localmente.
+Este documento contiene la especificación formal del desarrollo del proyecto, desde el planteamiento del problema hasta su fundamentación matemática e implementación. El objetivo del sistema es proyectar coordenadas geográficas reales (WGS84) en un lienzo bidimensional SVG de forma isótropa y conforme localmente, aplicándolo al campus de UPIITA-IPN.
+
+\section{Introducción}
+
+\subsection{Contexto general}
+La representación digital y visualización de espacios geográficos en pantallas bidimensionales es un área fundamental de la geomática y la graficación por computadora. Tradicionalmente, los sistemas cartográficos dependen de estándares complejos como la proyección Web Mercator, los cuales introducen distorsiones significativas a nivel global. Sin embargo, para entornos locales y acotados, tales como un campus universitario, el desarrollo de un motor cartográfico simplificado basado en gráficos vectoriales redimensionables (SVG) provee una solución óptima en rendimiento, flexibilidad y control interactivo sin dependencia de APIs externas.
+
+\subsection{Importancia de la graficación en el problema}
+El desafío de renderizar un mapa interactivo radica en la traducción fiel de coordenadas geodésicas tridimensionales (latitud y longitud sobre un elipsoide o esfera terrestre) a coordenadas cartesianas bidimensionales en píxeles del Viewport de la pantalla. Si esta transformación no se calcula correctamente, las proporciones físicas de los edificios, calles y áreas verdes se verán gravemente distorsionadas (achatadas o alargadas). La graficación por computadora aporta los conceptos fundamentales de transformaciones afines, mapeos conformes e isotropía de escala (relación de aspecto métrica uniforme en ambos ejes) para garantizar que la geometría visualizada conserve su forma geométrica real y su orientación local de manera exacta.
+
+\subsection{Descripción breve del proyecto}
+Este proyecto consiste en un Sistema de Mapeo Cartográfico Local e Interactivo desarrollado bajo una arquitectura web moderna con Next.js (React) para la visualización interactiva y Django REST Framework para el almacenamiento y gestión de datos geoespaciales. El núcleo del sistema es un motor de transformación geométrica isótropa y conforme que proyecta la geografía del campus escolar en elementos SVG nativos del navegador. La interfaz de usuario permite navegación por paneo, zoom interactivo mediante gestos táctiles (pinch-to-zoom) y edición interactiva de la geometría de los edificios arrastrando vértices en tiempo real, integrando geoperimetraje (geofencing) para el seguimiento de rutas GPS.
+
+\section{Planteamiento del problema}
+
+\subsection{Descripción detallada del problema}
+El campus universitario cuenta con diversas infraestructuras cuyas coordenadas espaciales se registran en el formato geodésico estándar WGS84. Para desarrollar aplicaciones de navegación local o de gestión de planta física, se requiere un visor gráfico que muestre este entorno. El problema consiste en diseñar e implementar las ecuaciones de proyección cartográfica local que mapeen estas coordenadas geográficas a un lienzo digital SVG de forma isótropa (donde un metro en el eje horizontal represente exactamente la misma cantidad de píxeles que en el eje vertical) sin recurrir a bibliotecas pesadas de terceros (como Google Maps o Leaflet) y permitiendo la interacción directa (edición de vértices, traslación, escala) sobre los elementos gráficos nativos.
+
+\subsection{Situación actual}
+La visualización cartográfica en la web usualmente se soluciona embebiendo mapas propietarios con limitaciones de licencia, o mediante librerías SIG (Sistemas de Información Geográfica) genéricas que consumen gran cantidad de recursos de procesamiento en dispositivos móviles. Además, las aproximaciones lineales simples para la conversión de grados (lat/lon) a píxeles ignoran la curvatura de la Tierra y la reducción del radio del paralelo local con la latitud, lo cual provoca deformaciones severas en la relación de aspecto visual de los edificios.
+
+\subsection{Justificación}
+La creación de un motor matemático de mapeo isótropo propio elimina los costos de licenciamiento, optimiza los tiempos de renderizado al interactuar directamente con el árbol DOM de SVG y permite el funcionamiento sin conexión a internet. La justificación técnica radica en resolver la proyección a nivel de álgebra lineal y geometría diferencial para lograr el máximo rendimiento gráfico posible en dispositivos de bajos recursos.
+
+\subsection{Alcances y limitaciones}
+\begin{itemize}
+    \item \textbf{Alcances:} Mapeo completo y preciso de las poligonales de edificios y senderos del campus; interacción táctil fluida (paneo y zoom mediante gestos); actualización y persistencia en base de datos PostgreSQL de la edición de vértices; y simulación o rastreo GPS en tiempo real con alertas de salida de límites (geofencing).
+    \item \textbf{Limitaciones:} La aproximación esférica local y las constantes de transformación son válidas únicamente dentro del polígono delimitador (Bounding Box) del campus (aproximadamente $1\text{ km}^2$), perdiendo validez geométrica a escalas mayores (distancias intermunicipales o globales).
+\end{itemize}
+
+\section{Objetivos}
+
+\subsection{Objetivo general}
+Desarrollar un sistema interactivo y responsivo de visualización cartográfica local para el campus UPIITA-IPN mediante la implementación de un motor de transformación geodésica isótropa y conforme en Next.js y SVG, conectado a un backend en Django y PostgreSQL.
+
+\subsection{Objetivos específicos}
+\begin{itemize}
+    \item Deducir las ecuaciones analíticas de transformación entre coordenadas WGS84 y coordenadas de pantalla SVG, calculando la altura exacta del ViewBox para garantizar isotropía.
+    \item Implementar la transformación inversa para permitir la recuperación de coordenadas geodésicas a partir de interacciones táctiles en píxeles.
+    \item Desarrollar el algoritmo de desplazamiento geodésico en $\mathbb{R}^3$ para proyectar trayectorias y desplazamientos GPS precisos sobre la superficie terrestre.
+    \item Construir una interfaz gráfica de alto impacto visual con soporte nativo para gestos móviles multitáctiles (pan, zoom y arrastre de vértices).
+\end{itemize}
+
 
 \section{Fundamento Matemático y Deducción de la Transformación}
 
