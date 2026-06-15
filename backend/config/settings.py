@@ -74,11 +74,19 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 # Configured to automatically parse database credentials from Render PostgreSQL service
 # falling back to SQLite if DATABASE_URL is not set (e.g. during local development).
+db_from_env = dj_database_url.config(
+    default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+    conn_max_age=600
+)
+
+# Si estamos usando Postgres (producción con Neon DB), configuramos SSL obligatorio
+if db_from_env.get('ENGINE') == 'django.db.backends.postgresql':
+    db_from_env['OPTIONS'] = {
+        'sslmode': 'require',
+    }
+
 DATABASES = {
-    'default': dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600
-    )
+    'default': db_from_env
 }
 
 
