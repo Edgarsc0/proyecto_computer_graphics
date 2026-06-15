@@ -8,6 +8,9 @@
 \usepackage{titlesec}
 \usepackage{xcolor}
 \usepackage{hyperref}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{shapes,shapes.geometric,arrows,positioning,babel}
 
 % Configuración de márgenes
 \geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
@@ -56,6 +59,46 @@ La superficie de la Tierra se parametriza en un sistema cartesiano tridimensiona
 \begin{equation}
     \mathbf{V}(\alpha,\beta) = r_t \cos(\alpha)\cos(\beta)\mathbf{\hat{i}} + r_t \cos(\alpha)\sin(\beta)\mathbf{\hat{j}} + r_t \sin(\alpha)\mathbf{\hat{k}}
 \end{equation}
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=2.5, >=stealth, 
+    axis/.style={->,thick},
+    vector/.style={->,ultra thick,blue},
+    proj/.style={dashed,red,thick},
+    angle/.style={draw, <->, thin}
+]
+    % Draw sphere grid (globe representation)
+    \draw[gray!30] (0,0) circle (1);
+    \draw[gray!30, dashed] (0,0) ellipse (1 and 0.4);
+    
+    % Draw axes
+    \draw[axis] (0,0,0) -- (1.5,0,0) node[right] {$x$ (Greenwich, $\beta=0$)};
+    \draw[axis] (0,0,0) -- (0,1.5,0) node[above] {$z$ (Polo Norte)};
+    \draw[axis] (0,0,0) -- (0,0,1.8) node[left] {$y$};
+    
+    % Draw vector v
+    \coordinate (O) at (0,0);
+    \coordinate (V) at (0.58,0.57,0.58);
+    \coordinate (ProjP) at (0.58,0,0.58);
+    
+    \draw[vector] (O) -- (V) node[above right] {$\vec{v} = [v_x, v_y, v_z]^T$};
+    \draw[proj] (V) -- (ProjP);
+    \draw[proj] (O) -- (ProjP) node[midway, below] {$\vec{\xi}$};
+    \draw[proj] (ProjP) -- (0.58,0,0);
+    \draw[proj] (ProjP) -- (0,0,0.58);
+    
+    % Draw Latitud alpha angle
+    \draw[draw=orange, thick] (0.2,0,0.2) arc (-45:20:0.28);
+    \node[orange] at (0.32,0.12,0.1) {$\alpha$};
+    
+    % Draw Longitud beta angle
+    \draw[draw=purple, thick] (0.3,0,0) arc (0:-45:0.3);
+    \node[purple] at (0.32,-0.12,0.05) {$\beta$};
+\end{tikzpicture}
+\caption{Representación Geométrica en $\mathbb{R}^3$ del Vector de Posición Geocéntrico.}
+\label{fig:geocentrico}
+\end{figure}
 
 A partir de este vector, se deduce que las distancias máximas reales del terreno en metros para un área acotada son:
 \begin{equation}
@@ -143,6 +186,63 @@ Dado que el coseno es una función par ($\cos(-x) = \cos x$), se debe resolver l
 Dadas dos ubicaciones geodésicas en la Tierra representadas por sus vectores de posición cartesianos conocidos $\vec{v_1}$ y $\vec{v_2}$ (ambos de magnitud $r_t$), se desea calcular el vector de posición $\vec{v_3}$ de una tercera ubicación situada a una distancia real de arco $\phi$ (en metros) sobre la superficie, partiendo desde $\vec{v_1}$ en la dirección de la cuerda recta $\vec{\xi} = \vec{v_2} - \vec{v_1}$ en $\mathbb{R}^3$.
 
 Para resolver esto, modelamos un triángulo plano $OAB$ en el espacio tridimensional (donde $O$ es el origen del planeta, $A$ es el punto inicial de $\vec{v_1}$, y $B$ es el punto auxiliar de desplazamiento lineal a lo largo de la secante):
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=1.8, >=stealth,
+    origin/.style={circle, draw, fill=black, inner sep=1.5pt},
+    node/.style={circle, draw, fill=blue, inner sep=1.5pt},
+    chord/.style={->, thick, red},
+    radius/.style={dashed, gray},
+    angle/.style={draw, <->, thin}
+]
+    % Origin
+    \node[origin, label=below:$O$] (O) at (0,0) {};
+    
+    % Point A (v1)
+    \coordinate (A) at (0,4);
+    \node[node, label=left:{$A (\vec{v_1})$}] at (A) {};
+    \draw[thick, ->] (O) -- (A) node[midway, left] {$r_t$};
+    
+    % Point C (v2)
+    \coordinate (C) at (2.5,3.12);
+    \node[node, label=right:{$C (\vec{v_2})$}] at (C) {};
+    \draw[thick, ->] (O) -- (C) node[midway, right] {$r_t$};
+    
+    % Chord xi
+    \draw[chord] (A) -- (C) node[midway, above] {$\vec{\xi} = \vec{v_2} - \vec{v_1}$};
+    
+    % Point B (intermediate w)
+    \coordinate (B) at (1.2,3.58);
+    \node[circle, draw, fill=purple, inner sep=1.2pt, label=above right:{$B (\vec{w})$}] at (B) {};
+    \draw[dashed, ->] (O) -- (B);
+    
+    % Intersection point v3
+    \coordinate (V3) at (0.79, 3.92); % projected on sphere
+    \node[circle, draw, fill=green, inner sep=1.5pt, label=above:{$v_3$}] at (V3) {};
+    
+    % Draw earth surface arc
+    \draw[draw=blue, thick] (0,4) arc (90:51.3:4);
+    \node[blue] at (1.5, 3.8) {Arco $\phi$};
+    
+    % Draw angle theta at O
+    \draw (0,0.8) arc (90:51.3:0.8);
+    \node at (0.3,1.0) {$\theta$};
+    
+    % Draw angle gamma2 and gamma1 at A
+    \draw (0,3.5) arc (270:345:0.5);
+    \node at (0.2,3.3) {$\gamma_2$};
+    
+    \draw (0,3.4) arc (270:90:0.6);
+    \node at (-0.3,3.4) {$\gamma_1$};
+    
+    % Draw angle sigma at B
+    \draw (1.2,3.58) -- ++(-0.2,-0.6);
+    \node at (0.9,3.3) {$\sigma$};
+\end{tikzpicture}
+\caption{Diagrama del Triángulo Auxiliar $OAB$ para la Deducción del Desplazamiento Geodésico.}
+\label{fig:desplazamiento}
+\end{figure}
 
 \subsection{Cálculo de la Dirección y el Ángulo Central ($\theta$)}
 Definimos el vector unitario director de la cuerda recta en el espacio:
