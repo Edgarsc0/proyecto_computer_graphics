@@ -134,6 +134,7 @@ const newBuildingPresets = {
 export default function Home() {
   // --- React State ---
   const [buildings, setBuildings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [userMarker, setUserMarker] = useState(null); // [lat, lon]
   const [selectedVertex, setSelectedVertex] = useState(null); // { edificioId, index, lat, lon, x, y }
   const [selectedBuildingId, setSelectedBuildingId] = useState(null);
@@ -230,6 +231,7 @@ export default function Home() {
 
     // Load initial dataset from backend API, fallback to static defaults if server is offline
     const loadData = async () => {
+      setIsLoading(true);
       try {
         const res = await fetch(`${API_BASE_URL}/api/buildings/`);
         if (res.ok) {
@@ -241,6 +243,7 @@ export default function Home() {
               svgPoints: b.rawCoordinates.map(([lat, lon]) => `${toX(lon).toFixed(2)},${toY(lat).toFixed(2)}`).join(" ")
             }));
             setBuildings(hydrated);
+            setIsLoading(false);
             return;
           }
         }
@@ -267,6 +270,7 @@ export default function Home() {
         };
       });
       setBuildings(parsed);
+      setIsLoading(false);
     };
 
     loadData();
@@ -1617,6 +1621,20 @@ export default function Home() {
                 <div className="mt-1 pt-1 border-t border-slate-700/50 flex gap-3 text-[10px] text-slate-500">
                   <span>PX: {mouseCoords.x}</span>
                   <span>PY: {mouseCoords.y}</span>
+                </div>
+              </div>
+            )}
+
+            {/* Premium Loader Overlay */}
+            {isLoading && (
+              <div className="map-loader-overlay">
+                <div className="loader-card">
+                  <RefreshCw className="animate-spin w-8 h-8 text-indigo-500" />
+                  <h3>Cargando Mapa...</h3>
+                  <p>
+                    Despertando el servidor del backend y base de datos (Neon/Render). 
+                    Esto puede tardar hasta 50 segundos si el servidor estaba inactivo (arranque en frío).
+                  </p>
                 </div>
               </div>
             )}
