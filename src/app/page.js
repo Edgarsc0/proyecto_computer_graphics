@@ -27,6 +27,8 @@ import {
   Crosshair
 } from "lucide-react";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+
 // Geodetic limits of the campus (WGS84)
 const LAT_MAX = 19.506085642577684;
 const LAT_MIN = 19.501672871991357;
@@ -224,7 +226,7 @@ export default function Home() {
     // Load initial dataset from backend API, fallback to static defaults if server is offline
     const loadData = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/buildings/");
+        const res = await fetch(`${API_BASE_URL}/api/buildings/`);
         if (res.ok) {
           const data = await res.json();
           if (data && data.length > 0) {
@@ -276,7 +278,7 @@ export default function Home() {
   // Reset to default buildings (backend + local fallback)
   const handleResetDefault = async () => {
     try {
-      const res = await fetch("http://localhost:8000/api/buildings/reset_defaults/", {
+      const res = await fetch(`${API_BASE_URL}/api/buildings/reset_defaults/`, {
         method: "POST"
       });
       if (res.ok) {
@@ -407,7 +409,7 @@ export default function Home() {
       const b = buildings.find(x => x.id === bId);
       if (b) {
         try {
-          await fetch(`http://localhost:8000/api/buildings/${b.id}/`, {
+          await fetch(`${API_BASE_URL}/api/buildings/${b.id}/`, {
             method: "PUT",
             headers: {
               "Content-Type": "application/json"
@@ -659,7 +661,7 @@ export default function Home() {
 
     if (updatedBuilding) {
       try {
-        await fetch(`http://localhost:8000/api/buildings/${updatedBuilding.id}/`, {
+        await fetch(`${API_BASE_URL}/api/buildings/${updatedBuilding.id}/`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json"
@@ -689,7 +691,7 @@ export default function Home() {
     }
 
     try {
-      await fetch(`http://localhost:8000/api/buildings/${id}/`, {
+      await fetch(`${API_BASE_URL}/api/buildings/${id}/`, {
         method: "DELETE"
       });
     } catch (err) {
@@ -774,7 +776,7 @@ export default function Home() {
     setEditLon(midLon.toFixed(8));
 
     try {
-      await fetch(`http://localhost:8000/api/buildings/${updatedBuilding.id}/`, {
+      await fetch(`${API_BASE_URL}/api/buildings/${updatedBuilding.id}/`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
@@ -834,7 +836,7 @@ export default function Home() {
     setEditLon(nextCoord[1].toFixed(8));
 
     try {
-      await fetch(`http://localhost:8000/api/buildings/${updatedBuilding.id}/`, {
+      await fetch(`${API_BASE_URL}/api/buildings/${updatedBuilding.id}/`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json"
@@ -1107,7 +1109,7 @@ export default function Home() {
 
       // Save to DB
       try {
-        await fetch("http://localhost:8000/api/buildings/", {
+        await fetch(`${API_BASE_URL}/api/buildings/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json"
