@@ -1,0 +1,7 @@
+django>=4.0,<6.1
+djangorestframework
+django-cors-headers
+gunicorn
+whitenoise
+dj-database-url
+psycopg2-binary
