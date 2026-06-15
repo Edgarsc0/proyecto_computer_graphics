@@ -1359,8 +1359,6 @@ export default function Home() {
         <div className="header-left">
           <Compass className="w-6 h-6 text-indigo-500 animate-spin-slow" />
           <h1 className="header-title">Proyecto Computer Graphics</h1>
-          <span className="header-badge">ISÓTROPO</span>
-          <span className="header-badge">WGS84</span>
         </div>
         <div className="header-right">
           <button 
