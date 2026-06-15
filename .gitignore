@@ -50,3 +50,10 @@ backend/staticfiles/
 .pytest_cache/
 .coverage
 htmlcov/
+
+# LaTeX auxiliary files
+*.aux
+*.log
+*.out
+*.toc
+

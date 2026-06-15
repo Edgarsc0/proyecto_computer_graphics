@@ -1,0 +1,463 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[spanish]{babel}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{color}
+\usepackage{geometry}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{float}
+\usepackage{tikz}
+\usetikzlibrary{shapes,shapes.geometric,arrows,positioning,babel}
+
+% Configuración de márgenes
+\geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
+
+% Configuración de colores para código
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.96,0.96,0.94}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{blue}\bfseries,
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+% Encabezado y pie de página
+\pagestyle{fancy}
+\fancyhf{}
+\lhead{\small Proyecto Final - Graficación por Computadora}
+\rhead{\small Universidad - Computación}
+\rfoot{\thepage}
+\lfoot{\small Proyecto de Mapeo Cartográfico Isótropo}
+
+% Estilo de títulos
+\titleformat{\section}
+  {\normalfont\Large\bfseries\color{blue}}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\normalfont\large\bfseries\color{teal}}
+  {\thesubsection}{1em}{}
+
+% Título del Documento
+\title{
+    \vspace{2cm}
+    \textbf{Proyecto Final: Sistema de Mapeo Cartográfico e Interacción Vectorial Isótropa Local}\\
+    \large{Materia: Graficación por Computadora}\\
+    \vspace{1cm}
+}
+\author{
+    \textbf{Desarrollador:} Edgarsc0\\
+    \small{Repositorio: \href{https://github.com/Edgarsc0/proyecto_computer_graphics}{Edgarsc0/proyecto\_computer\_graphics}}
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+\thispagestyle{empty}
+\newpage
+\tableofcontents
+\newpage
+
+\section{Introducción}
+
+\subsection{Contexto general}
+El mapeo de espacios geográficos a nivel local ha tomado gran importancia con el desarrollo de la web móvil y la geolocalización. Las plataformas tradicionales de Sistemas de Información Geográfica (GIS) suelen ser pesadas, costosas y difíciles de personalizar para necesidades específicas en pantallas web de alta interactividad. En este escenario, la graficación vectorial 2D mediante el estándar SVG (Scalable Vector Graphics) ofrece una alternativa ligera y potente capaz de renderizar geometrías arbitrarias directamente en el navegador del usuario utilizando aceleración por hardware.
+
+\subsection{Importancia de la graficación en el problema}
+El desafío central al proyectar una porción de la superficie esférica de la Tierra (tres dimensiones) sobre una pantalla de computadora (dos dimensiones) radica en evitar la deformación visual de las figuras geométricas (edificios, calles, puentes). Para asegurar que un cuadrado sobre la Tierra se dibuje como un cuadrado exacto en la pantalla (manteniendo la métrica y los ángulos), se requiere la aplicación de técnicas de \textbf{proyección conforme local o isótropa}. Sin esta corrección, los objetos se estiran o aplastan en una de las dimensiones debido a la variación de la longitud con respecto a la latitud, lo cual arruina la fidelidad del mapa y confunde al usuario final.
+
+\subsection{Descripción breve del proyecto}
+Este proyecto consiste en una aplicación web interactiva de alto rendimiento distribuida en tres capas principales:
+\begin{enumerate}
+    \item \textbf{Frontend (Next.js/Vercel):} Un lienzo interactivo basado en SVG que renderiza la topología del campus en tiempo real, permitiendo arrastrar vértices, crear polígonos, aplicar transformaciones de cámara (zoom/pan) mediante gestos táctiles (móvil) o ratón, e inspeccionar coordenadas en vivo.
+    \item \textbf{Backend (Django REST Framework/Render):} Un API REST encargado de almacenar las coordenadas geodésicas crudas en formato WGS84, aplicar comprobaciones iniciales y proveer las rutas de actualización en tiempo real.
+    \item \textbf{Base de Datos (Neon DB):} Un motor relacional PostgreSQL serverless que guarda de manera consistente los límites espaciales del campus.
+\end{enumerate}
+
+\section{Planteamiento del problema}
+
+\subsection{Descripción detallada del problema}
+El campus de la escuela cuenta con diversas estructuras y caminos cuya distribución geográfica no siempre se corresponde adecuadamente con plataformas genéricas debido a la falta de actualización periódica. Además, los estudiantes carecen de una herramienta interactiva local que les permita realizar mediciones de perímetros reales, modificar la topología del campus en un plano geométrico interactivo y verificar su presencia física en el sitio mediante el sensor GPS con fines administrativos o de asistencia.
+
+\subsection{Situación actual}
+Las soluciones existentes dependen de APIs de terceros (como Google Maps) que cargan texturas rasterizadas (mapas de bits) no modificables a nivel de nodos geométricos individuales, lo cual impide la interacción fina (como el drag-and-drop de un vértice específico de un edificio en tiempo real). Por otro lado, las aplicaciones puramente locales no ofrecen persistencia compartida entre usuarios, perdiendo los cambios estructurales hechos en el mapa.
+
+\subsection{Justificación}
+Es necesario un sistema de graficación vectorial adaptado al navegador web que combine la flexibilidad del renderizado 2D isótropo en tiempo real con una base de datos relacional de nivel de producción. Al implementar transformaciones afines de traslación y escalado junto con gestos táctiles multitáctiles (pinch-to-zoom), se provee una experiencia premium y responsiva en teléfonos móviles, permitiendo realizar ediciones topológicas directo desde el campo de estudio.
+
+\subsection{Alcances y limitaciones}
+\begin{itemize}
+    \item \textbf{Alcance:} Proyección conforme local en un lienzo SVG de $1000\times H$ píxeles, edición interactiva bidimensional por arrastre de nodos, persistencia remota completa de datos, control de geofencing en tiempo real en dispositivos móviles.
+    \item \textbf{Limitaciones:} El modelado es puramente bidimensional (proyección en el plano horizontal $XY$, sin soporte tridimensional $Z$ o relieve). El geofencing depende directamente de la precisión y disponibilidad de la señal del receptor GPS físico del dispositivo móvil del usuario.
+\end{itemize}
+
+\section{Objetivos}
+
+\subsection{Objetivo general}
+Desarrollar e implementar una plataforma web interactiva de graficación y mapeo vectorial isótropo que permita modelar, visualizar, editar de forma visual y persistir en una base de datos relacional PostgreSQL la topología del campus escolar utilizando coordenadas geodésicas reales.
+
+\subsection{Objetivos específicos}
+\begin{enumerate}
+    \item Diseñar y aplicar un pipeline de proyección matemática en 2D que mapee coordenadas de latitud y longitud WGS84 a píxeles de pantalla, compensando la distorsión del factor cosenoidal de la latitud local.
+    \item Implementar transformaciones geométricas afines (traslación y escalado) sobre el lienzo web para soportar zoom con rueda del ratón, paneo manual y gestos táctiles complejos (pinch-to-zoom, doble toque y arrastre de vértices).
+    \item Crear una arquitectura de backend REST desacoplada que sincronice los cambios geométricos directamente con una base de datos centralizada Neon DB.
+    \item Programar un sistema de geofencing en tiempo real que valide la ubicación del usuario mediante la API de Geolocalización de HTML5 y bloquee la captura en caso de salida del área permitida.
+\end{enumerate}
+
+\section{Marco teórico}
+
+\subsection{Conceptos fundamentales de graficación por computadora}
+\begin{itemize}
+    \item \textbf{Lienzo Vectorial (Vector Canvas):} A diferencia del renderizado rasterizado por píxeles (canvas 2D ordinario), SVG utiliza representaciones analíticas de primitivas de graficación (líneas, polígonos, círculos). Esto mantiene la resolución infinita de las figuras al aplicar transformaciones geométricas de zoom y evita artefactos de pixelado.
+    \text{Isotropía Métrica y Conformalidad:} Una proyección es conforme si conserva los ángulos locales de las figuras. En nuestro entorno local, esto se logra forzando a que la escala métrica de la proyección sea idéntica tanto en el eje horizontal ($X$) como en el eje vertical ($Y$).
+\end{itemize}
+
+\subsection{Técnicas utilizadas}
+
+\subsubsection{Transformaciones geométricas afines 2D}
+Las transformaciones afines conservan la colinealidad de los puntos y las proporciones de las distancias en líneas paralelas. Cualquier combinación de rotación, escalado y traslación se puede representar en coordenadas homogéneas mediante una multiplicación matriz-vector:
+\begin{equation}
+\begin{bmatrix}
+x' \\
+y' \\
+1
+\end{bmatrix}
+=
+\begin{bmatrix}
+s_x & 0 & t_x \\
+0 & s_y & t_y \\
+0 & 0 & 1
+\end{bmatrix}
+\begin{bmatrix}
+x \\
+y \\
+1
+\end{bmatrix}
+\end{equation}
+En nuestro sistema de mapeo, los valores de traslación $t_x, t_y$ (representados en el estado \texttt{pan}) y el factor de escala $s_x = s_y = s$ (representado por \texttt{zoom}) se inyectan en el atributo \texttt{transform} del contenedor gráfico general:
+\texttt{transform="translate(pan.x, pan.y) scale(zoom)"}.
+
+\subsubsection{Pipeline gráfico del navegador}
+Cuando el estado del mapa cambia (debido a un arrastre de vértice o zoom), el motor del navegador recalcula el árbol de renderizado, ejecutando las siguientes etapas:
+\begin{enumerate}
+    \item \textbf{Layout (Diseño):} Cálculo de las posiciones vectoriales relativas en base a los estados matemáticos.
+    \item \textbf{Paint (Pintado):} Generación de comandos de dibujo para cada nodo (polígonos, círculos, textos).
+    \item \textbf{Composite (Composición):} Envío de texturas a la GPU para su ordenamiento y rasterizado final con antialiasing por hardware.
+\end{enumerate}
+Al utilizar propiedades CSS aceleradas (como transformaciones de matriz 2D), logramos tasas de refresco fluidas de 60 cuadros por segundo.
+
+\subsubsection{Modelo de Iluminación y Estilos Visuales Premium}
+Para dotar a la aplicación de una estética premium y moderna, se utilizó una técnica de simulación de iluminación mediante variables CSS dinámicas e interfaces de tipo \textbf{Glassmorphism}:
+\begin{itemize}
+    \item \textbf{Efectos de Transparencia y Refracción (Glassmorphism):} Mediante la propiedad CSS \texttt{backdrop-filter: blur(10px)}, las capas flotantes interactúan ópticamente con el mapa que se encuentra detrás, simulando un vidrio esmerilado que refracta la luz emitida por los polígonos vectoriales.
+    \item \textbf{Contraste de Altura (Sombras vectoriales):} Uso de la propiedad \texttt{filter: drop-shadow(...)} para otorgar profundidad tridimensional a los polígonos del plano, simulando una luz cenital que proyecta sombras suaves sobre el terreno del campus.
+\end{itemize}
+
+\subsection{Tecnologías relacionadas}
+\begin{itemize}
+    \item \textbf{WGS84 (World Geodetic System 1984):} Estándar cartográfico mundial que describe la forma de la Tierra mediante un elipsoide de revolución. Utilizado de manera nativa por la señal de los satélites GPS.
+    \item \textbf{Next.js y React:} Arquitectura orientada a componentes declarativos para la sincronización automática del estado lógico con la representación del DOM del SVG.
+    \item \textbf{Django REST Framework:} Framework de desarrollo rápido para Python que implementa serializadores seguros para convertir objetos del ORM a estructuras JSON.
+\end{itemize}
+
+\section{Propuesta de solución}
+
+\subsection{Descripción general de la solución}
+Se propone un sistema de información espacial autohospedado en tres niveles:
+\begin{itemize}
+    \item \textbf{Capa de Almacenamiento:} Base de datos PostgreSQL alojada en Neon DB con protección SSL forzada en producción para garantizar la seguridad de los datos topológicos.
+    \item \textbf{Capa de Servicio (API):} Backend en Django que provee endpoints REST para operaciones CRUD sobre las estructuras (\texttt{/api/buildings/}).
+    \item \textbf{Capa de Presentación:} Frontend SPA (Single Page Application) responsiva que interactúa dinámicamente con las coordenadas y gestiona el posicionamiento geodésico directo.
+\end{itemize}
+
+\subsection{Enfoque adoptado}
+Para la representación gráfica, se diseñó un algoritmo de proyección isótropa local parametrizado por los límites reales del campus universitario (Latitud máxima/mínima y Longitud máxima/mínima). El enfoque asume que, dada la pequeña extensión del campus (aproximadamente $500\times 300$ metros), la curvatura terrestre es despreciable, lo que nos permite implementar una proyección cilíndrica conforme local extremadamente eficiente.
+
+\subsection{Justificación técnica de la propuesta}
+\begin{enumerate}
+    \item \textbf{SVG en lugar de Canvas 2D ordinario:} SVG genera elementos en el DOM, permitiendo asociar directamente manejadores de eventos interactivos (\texttt{onMouseDown}, \texttt{onTouchStart}) a cada círculo que representa un vértice y a cada polígono de edificio, sin necesidad de recalcular intersecciones matemáticas manuales en píxeles.
+    \item \textbf{PostgreSQL en Neon DB:} Soporta transacciones ACID y se conecta mediante protocolos pools de conexiones optimizadas para Render.
+    \item \textbf{Gunicorn y WhiteNoise en Render:} Configuración robusta para servir archivos estáticos compilados de Django y gestionar procesos concurrentes en el servidor web.
+\end{enumerate}
+
+\newpage
+\section{Desarrollo del proyecto}
+
+\subsection{Análisis}
+
+\subsubsection{Requerimientos funcionales}
+\begin{itemize}
+    \item \textbf{RF-1:} Cargar y renderizar las estructuras predeterminadas del campus escolar de forma isótropa.
+    \item \textbf{RF-2:} Permitir al usuario arrastrar cualquier vértice de forma visual con el ratón o con el dedo en dispositivos móviles.
+    \item \textbf{RF-3:} Sincronizar automáticamente cualquier edición de vértices en la base de datos de producción Neon DB.
+    \item \textbf{RF-4:} Permitir agregar nuevas estructuras ingresando una cadena de coordenadas geodésicas en formato texto.
+    \item \textbf{RF-5:} Obtener la geolocalización en tiempo real del usuario móvil mediante GPS.
+    \item \textbf{RF-6:} Validar si la posición del usuario se encuentra dentro de los límites físicos del campus escolar. Si está fuera, detener el rastreo de inmediato y reportar un error detallado.
+\end{itemize}
+
+\subsubsection{Requerimientos no funcionales}
+\begin{itemize}
+    \item \textbf{RNF-1:} Interfaz 100\% responsiva que se adapte a dispositivos móviles de cualquier tamaño de pantalla.
+    \item \textbf{RNF-2:} Animaciones suaves de carga y transiciones CSS en modo oscuro y claro.
+    \item \textbf{RNF-3:} Manejo del retraso de inicio en frío de los servidores gratuitos (Render) mediante un cargador glassmorphism informativo.
+    \item \textbf{RNF-4:} Seguridad SSL obligatoria en todas las consultas a la base de datos de Neon DB en producción.
+\end{itemize}
+
+\subsection{Diseño}
+
+\subsubsection{Arquitectura del sistema}
+El sistema se compone de una arquitectura clásica de tres capas desacopladas, lo cual permite escalar el frontend de forma independiente en Vercel mientras el backend en Django en Render gestiona la base de datos relacional.
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=2cm, auto, >=stealth,
+    block/.style={rectangle, draw, fill=blue!10, text width=4.5cm, text centered, rounded corners, minimum height=1.5cm},
+    database/.style={cylinder, draw, shape border rotate=90, fill=green!10, text width=3cm, text centered, minimum height=2cm, shape aspect=0.5},
+    cloud/.style={draw, ellipse, fill=red!10, minimum height=1.5cm, text width=3cm, text centered}
+]
+    \node [block] (front) {\textbf{Frontend (Next.js)} \\ React / SVG Canvas \\ \small Despliegue en Vercel};
+    \node [block, right=2.5cm of front] (back) {\textbf{Backend (Django)} \\ REST API / ORM \\ \small Despliegue en Render};
+    \node [database, below=2cm of back] (db) {\textbf{Base de Datos} \\ PostgreSQL \\ \small (Neon DB)};
+    
+    \draw [<->, thick, blue] (front) -- node[above, text width=2.5cm, align=center] {\small Peticiones HTTP \\ \small JSON API} (back);
+    \draw [<->, thick, green] (back) -- node[right] {\small SSL Connect / SQL} (db);
+\end{tikzpicture}
+\caption{Diagrama de Arquitectura de Tres Capas Desacopladas.}
+\label{fig:arquitectura}
+\end{figure}
+
+\subsubsection{Diagrama de flujo de coordenadas}
+El pipeline gráfico de transformación de coordenadas geodésicas a píxeles en pantalla y viceversa se detalla en el siguiente flujo lógico:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[node distance=2.5cm, >=stealth,
+    stepbox/.style={rectangle, draw, fill=orange!10, text width=4cm, text centered, rounded corners, minimum height=1.2cm}
+]
+    \node [stepbox] (geo) {\textbf{Espacio Geodésico} \\ Coordenadas WGS84 \\ $(\text{Latitud } \phi, \text{Longitud } \lambda)$};
+    \node [stepbox, right=2cm of geo] (scale) {\textbf{Escalamiento Isótropo} \\ Aplicación del factor \\ $\cos(\phi_0)$ local};
+    \node [stepbox, right=2cm of scale] (screen) {\textbf{Espacio del Canvas} \\ Lienzo SVG (Píxeles) \\ Coordenadas $(X, Y)$};
+    
+    \draw [->, ultra thick, red] (geo) -- node[above] {\small Proyección} (scale);
+    \draw [->, ultra thick, red] (scale) -- node[above] {\small Rasterización} (screen);
+    \draw [->, thick, dashed, blue, bend left=30] (screen) to node[below] {\small Transformación Inversa ($T^{-1}$)} (geo);
+\end{tikzpicture}
+\caption{Pipeline de Proyección Conforme de Coordenadas Geográficas.}
+\label{fig:coordenadas}
+\end{figure}
+
+\subsection{Construcción (Implementación)}
+
+\subsubsection{Herramientas utilizadas}
+\begin{itemize}
+    \item \textbf{Lenguaje de Programación (Frontend):} JavaScript (ES6+) con Next.js (React).
+    \item \textbf{Librería de Iconografía:} Lucide-react.
+    \item \textbf{Estilos Visuales:} Vanilla CSS con sistema de variables personalizadas para soporte nativo de temas (Dark/Light).
+    \item \textbf{Lenguaje de Programación (Backend):} Python 3.10.
+    \item \textbf{Framework Web (Backend):} Django con Django REST Framework.
+    \item \textbf{Control de Producción (Servidor):} Gunicorn (servidor HTTP WSGI) y WhiteNoise (servicio de estáticos altamente optimizado).
+\end{itemize}
+
+\subsubsection{Algoritmos gráficos y proyección matemática empleados}
+
+\paragraph{1. Algoritmo de Proyección Conforme Local Isótropa:}
+Definimos los límites geodésicos del campus:
+\begin{align*}
+    \phi_{max} &= 19.50608564^\circ \text{ N} \\
+    \phi_{min} &= 19.50167287^\circ \text{ N} \\
+    \lambda_{max} &= -99.14538442^\circ \text{ W} \\
+    \lambda_{min} &= -99.14882990^\circ \text{ W}
+\end{align*}
+Calculamos las diferencias geodésicas:
+\begin{align*}
+    \Delta\phi &= \phi_{max} - \phi_{min} \\
+    \Delta\lambda &= \lambda_{max} - \lambda_{min}
+\end{align*}
+Calculamos la latitud central del campus ($\phi_0$) y su valor en radianes:
+\begin{equation}
+    \phi_0 = \frac{\phi_{max} + \phi_{min}}{2}, \quad \phi_{0,\text{rad}} = \phi_0 \cdot \frac{\pi}{180}
+\end{equation}
+Para mapear la longitud al ancho del lienzo $W = 1000$ píxeles de forma lineal:
+\begin{equation}
+    x = (\lambda - \lambda_{min}) \cdot \frac{W}{\Delta\lambda}
+\end{equation}
+Para garantizar la isotropía métrica (que 1 píxel horizontal represente la misma cantidad de metros que 1 píxel vertical), el alto del lienzo $H$ debe escalarse considerando el achatamiento cosenoidal de los meridianos en esa latitud:
+\begin{equation}
+    H = W \cdot \frac{\Delta\phi}{\Delta\lambda \cdot \cos(\phi_{0,\text{rad}})}
+\end{equation}
+Mapeamos la latitud al eje vertical del lienzo (invirtiendo el sentido, dado que en SVG el origen $(0,0)$ está en la esquina superior izquierda):
+\begin{equation}
+    y = (\phi_{max} - \phi) \cdot \frac{H}{\Delta\phi}
+\end{equation}
+
+\paragraph{2. Algoritmo de Transformación Inversa (Pantalla a Geodésica):}
+Para traducir un clic o un evento de arrastre en la pantalla $(x, y)$ de vuelta a coordenadas del mundo real:
+\begin{align*}
+    \lambda &= \lambda_{min} + \frac{x \cdot \Delta\lambda}{W} \\
+    \phi &= \phi_{max} - \frac{y \cdot \Delta\phi}{H}
+\end{align*}
+
+\paragraph{3. Ecuación de Distancia Métrica Real (Haversine):}
+Para el cálculo del perímetro de las estructuras en metros sobre la esfera terrestre:
+\begin{equation}
+    d = 2R \cdot \text{arcsin}\left(\sqrt{\sin^2\left(\frac{\Delta\phi}{2}\right) + \cos(\phi_1)\cos(\phi_2)\sin^2\left(\frac{\Delta\lambda}{2}\right)}\right)
+\end{equation}
+Donde $R \approx 6,371,000$ metros es el radio medio de la Tierra.
+
+\paragraph{4. Algoritmo de Interacción Táctil de Zoom Multitáctil (Pinch-to-zoom):}
+Cuando se detectan dos eventos táctiles en la pantalla en las posiciones $T_1(x_1, y_1)$ y $T_2(x_2, y_2)$:
+\begin{enumerate}
+    \item Se calcula la distancia euclidiana inicial entre ambos toques:
+    \begin{equation}
+        d_{inicial} = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}
+    \end{equation}
+    \item Durante el movimiento táctil, se mide la nueva distancia $d_{actual}$ y se computa el factor de escala relativo:
+    \begin{equation}
+        s_{relativo} = \frac{d_{actual}}{d_{inicial}}
+    \end{equation}
+    \item El nuevo nivel de zoom se calcula multiplicando el zoom inicial por $s_{relativo}$, limitando el valor en un rango de $[0.4, 10.0]$ para evitar distorsiones infinitas.
+    \item Se recalcula la traslación general ($pan.x, pan.y$) para mantener el centro geométrico de los dedos del usuario inmóvil durante el zoom.
+\end{enumerate}
+
+\subsection{Pruebas}
+Se desarrollaron múltiples escenarios de prueba de caja negra y de estrés de interfaz:
+\begin{table}[H]
+\centering
+\begin{tabular}{|l|p{6cm}|p{6cm}|}
+\hline
+\textbf{Caso de Prueba} & \textbf{Entrada/Acción} & \textbf{Resultado Esperado} \\ \hline
+1. Carga del Mapa & Cargar el sitio en Vercel tras inactividad. & Muestra la tarjeta informativa glassmorphism de Render despertándose y luego carga correctamente el mapa. \\ \hline
+2. Edición de Vértices & Arrastrar un vértice del "Edificio 2" en PC. & El polígono se deforma en tiempo real, guarda la posición en Neon DB y persiste al refrescar. \\ \hline
+3. Gestos Táctiles & Pizcar con dos dedos sobre el mapa en un teléfono móvil. & El mapa aplica zoom dinámico de forma fluida centrado en los dedos del usuario. \\ \hline
+4. Geofencing Exitoso & Simular coordenadas $19.5042, -99.1470$ (dentro del campus). & Ubica el punto GPS con un círculo vibrante de color rojo y muestra alerta de éxito. \\ \hline
+5. Geofencing Error & Activar GPS real desde fuera del campus escolar. & Detiene la captura GPS de inmediato, borra el marcador del mapa y lanza alerta de error detallada. \\ \hline
+\end{tabular}
+\caption{Matriz de Pruebas de Funcionamiento en Producción.}
+\label{tab:pruebas}
+\end{table}
+
+\subsection{Implantación}
+\begin{itemize}
+    \item \textbf{Requisitos mínimos para el usuario:} Dispositivo móvil con conexión a Internet y navegador web moderno compatible con SVG y Geolocalización HTML5 (Chrome, Safari, Firefox).
+    \item \textbf{Instrucciones de uso:}
+    \begin{enumerate}
+        \item Ingresar a la URL del frontend en Vercel.
+        \item Utilizar el arrastre con un dedo para moverse por el mapa o con dos dedos para aplicar zoom táctil.
+        \item Activar el botón de GPS en el panel derecho para rastrear su posición en vivo.
+        \item Realizar modificaciones a las esquinas de los edificios directamente tocándolas y arrastrándolas.
+    \end{enumerate}
+\end{itemize}
+
+\section{Resultados}
+El sistema interactivo fue desplegado con éxito absoluto. El frontend es completamente responsivo, adaptándose a pantallas móviles estrechas mediante pestañas dinámicas en el panel de control y una barra de herramientas flotante sobre el mapa.
+\begin{itemize}
+    \item \textbf{Vercel Frontend URL:} \url{https://proyecto-computer-graphics.vercel.app/}
+    \item \textbf{Render Backend URL:} \url{https://proyecto-computer-graphics-backend.onrender.com/}
+\end{itemize}
+La base de datos PostgreSQL en la nube (Neon DB) almacena las geometrías geodésicas crudas de 14 estructuras complejas. Las transformaciones geométricas CSS y SVG por hardware logran tiempos de respuesta instantáneos en móviles durante la interacción, mejorando drásticamente el flujo de trabajo cartográfico.
+
+\section{Discusión}
+
+\subsection{Ventajas de la solución}
+\begin{itemize}
+    \item \textbf{Interactividad directa por nodos:} Edición nativa y rápida sin recalcular coordenadas de píxeles sobre mapas rasterizados rígidos.
+    \item \textbf{Consistencia de proyección:} Mantiene la métrica isótropa para que la percepción de distancias y formas sea idéntica a la realidad.
+    \item \textbf{Soporte de cold starts:} La implementación de una pantalla de carga glassmorphic informativa soluciona la mala experiencia de usuario causada por los servidores gratuitos durmientes.
+\end{itemize}
+
+\subsection{Limitaciones y problemas encontrados}
+\begin{itemize}
+    \item \textbf{Latencia de inicio en Render:} Resuelta visualmente mediante el spinner dinámico.
+    \item \textbf{Scroll colateral en móviles:} Al intentar mover el mapa con el dedo, el navegador desplazaba la ventana completa de la página. Esto fue resuelto inyectando \texttt{touch-action: none} en el SVG y controlando preventivamente los eventos del puntero táctil de unísono.
+\end{itemize}
+
+\section{Conclusiones}
+Se cumplió satisfactoriamente con el diseño de un pipeline de graficación por computadora conforme local. La combinación de transformaciones geométricas afines en coordenadas homogéneas y modelado geométrico relacional demuestra que es factible desarrollar alternativas GIS web de alto impacto gráfico de manera ligera y personalizada. El proyecto integra conceptos clave de la asignatura como pipeline gráfico, matrices de transformación, interacción humano-computadora en graficación y rasterizado vectorial acelerado por hardware.
+
+\newpage
+\section{Referencias}
+\begin{enumerate}
+    \item J. D. Foley, A. van Dam, S. K. Feiner, and J. F. Hughes, \textit{Computer Graphics: Principles and Practice}, 2nd ed. Boston, MA: Addison-Wesley, 1996.
+    \item W. Tobler, ``A classification of map projections,'' \textit{Annals of the Association of American Geographers}, vol. 52, no. 2, pp. 167--175, 1962.
+    \item National Geospatial-Intelligence Agency, ``Department of Defense World Geodetic System 1984,'' NGA Standard doc. TR8350.2, 2014.
+    \item SVG Working Group, ``Scalable Vector Graphics (SVG) 2 Specification,'' W3C Candidate Recommendation, 2018.
+\end{enumerate}
+
+\newpage
+\section{Anexos}
+
+\subsection{Código de Proyección Isótropa Geodésica (Frontend)}
+\begin{lstlisting}[language=Java, caption={Algoritmo de mapeo de coordenadas WGS84 a píxeles SVG en page.js}]
+const LAT_MAX = 19.506085642577684;
+const LAT_MIN = 19.501672871991357;
+const LON_MAX = -99.14538442387669;
+const LON_MIN = -99.14882990272824;
+
+const DELTA_LAT = LAT_MAX - LAT_MIN;
+const DELTA_LON = LON_MAX - LON_MIN;
+const LAT_0 = (LAT_MAX + LAT_MIN) / 2;
+const LAT_0_RAD = (LAT_0 * Math.PI) / 180;
+
+const W = 1000;
+// Calculo del alto H preservando la isotropia metrica local
+const H = W * (DELTA_LAT / (DELTA_LON * Math.cos(LAT_0_RAD)));
+
+const toX = (lon) => {
+  return (lon - LON_MIN) * (W / DELTA_LON);
+};
+
+const toY = (lat) => {
+  return (LAT_MAX - lat) * (H / DELTA_LAT);
+};
+\end{lstlisting}
+
+\subsection{Código de Soporte Gestual Pinch-to-zoom}
+\begin{lstlisting}[language=Java, caption={Controladores táctiles para zoom y paneo multitáctil}]
+const handleTouchMove = (e) => {
+  if (e.touches.length === 2 && touchStartDistRef.current && touchStartRef.current) {
+    const t1 = e.touches[0];
+    const t2 = e.touches[1];
+    const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+    const startDist = touchStartDistRef.current;
+    
+    if (startDist > 0) {
+      const scale = currentDist / startDist;
+      const initialZoom = touchStartZoomRef.current;
+      const nextZoom = Math.max(0.4, Math.min(10, initialZoom * scale));
+      
+      const { midX, midY, panX, panY } = touchStartRef.current;
+      
+      // Ajuste de traslacion para fijar el centro del gesto tactil
+      const newPanX = midX - (midX - panX) * (nextZoom / initialZoom);
+      const newPanY = midY - (midY - panY) * (nextZoom / initialZoom);
+      
+      setZoom(nextZoom);
+      setPan({ x: newPanX, y: newPanY });
+    }
+  }
+};
+\end{lstlisting}
+
+\end{document}
