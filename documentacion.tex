@@ -10,7 +10,68 @@
 \usepackage{hyperref}
 \usepackage{float}
 \usepackage{tikz}
-\usetikzlibrary{shapes,shapes.geometric,arrows,positioning,babel}
+\usetikzlibrary{shapes,shapes.geometric,arrows,positioning,babel,backgrounds,calc,decorations.pathmorphing}
+
+% Colores inspirados en pizarrón escolar
+\definecolor{chalkboard}{HTML}{1A3020} % Verde oscuro de pizarrón escolar
+
+\tikzset{
+    chalkboard style/.style={
+        background rectangle/.style={fill=chalkboard},
+        show background rectangle,
+        inner sep=12pt,
+        rounded corners=5pt,
+        every label/.style={text=white},
+        text=white
+    },
+    chalkaxis/.style={
+        draw=white!85!gray,
+        thick,
+        ->,
+        decorate,
+        decoration={random steps, segment length=2mm, amplitude=0.2pt}
+    },
+    chalkline/.style={
+        draw=white!95!gray,
+        thick,
+        decorate,
+        decoration={random steps, segment length=2mm, amplitude=0.15pt}
+    },
+    chalkdashed/.style={
+        draw=white!70!gray,
+        dashed,
+        thick,
+        decorate,
+        decoration={random steps, segment length=2.5mm, amplitude=0.2pt}
+    },
+    chalkvector/.style={
+        draw=cyan!90!white,
+        ultra thick,
+        ->,
+        decorate,
+        decoration={random steps, segment length=1.5mm, amplitude=0.2pt}
+    },
+    chalkchord/.style={
+        draw=red!80!white,
+        ultra thick,
+        ->,
+        decorate,
+        decoration={random steps, segment length=1.5mm, amplitude=0.2pt}
+    },
+    chalkangle/.style={
+        draw=yellow!90!orange,
+        thick,
+        <->,
+        decorate,
+        decoration={random steps, segment length=1.5mm, amplitude=0.1pt}
+    },
+    chalkcircle/.style={
+        draw=white!45!gray,
+        thin,
+        decorate,
+        decoration={random steps, segment length=3mm, amplitude=0.25pt}
+    }
+}
 
 % Configuración de márgenes
 \geometry{top=2.5cm, bottom=2.5cm, left=2.5cm, right=2.5cm}
@@ -62,41 +123,41 @@ La superficie de la Tierra se parametriza en un sistema cartesiano tridimensiona
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[scale=2.5, >=stealth, 
-    axis/.style={->,thick},
-    vector/.style={->,ultra thick,blue},
-    proj/.style={dashed,red,thick},
-    angle/.style={draw, <->, thin}
+\begin{tikzpicture}[scale=2.5, >=stealth, chalkboard style,
+    axis/.style={chalkaxis},
+    vector/.style={chalkvector},
+    proj/.style={chalkdashed},
+    angle/.style={chalkangle}
 ]
     % Draw sphere grid (globe representation)
-    \draw[gray!30] (0,0) circle (1);
-    \draw[gray!30, dashed] (0,0) ellipse (1 and 0.4);
+    \draw[chalkcircle] (0,0) circle (1);
+    \draw[chalkcircle, dashed] (0,0) ellipse (1 and 0.4);
     
     % Draw axes
-    \draw[axis] (0,0,0) -- (1.5,0,0) node[right] {$x$ (Greenwich, $\beta=0$)};
-    \draw[axis] (0,0,0) -- (0,1.5,0) node[above] {$z$ (Polo Norte)};
-    \draw[axis] (0,0,0) -- (0,0,1.8) node[left] {$y$};
+    \draw[axis] (0,0,0) -- (1.5,0,0) node[right, color=white] {$x$ (Greenwich, $\beta=0$)};
+    \draw[axis] (0,0,0) -- (0,1.5,0) node[above, color=white] {$z$ (Polo Norte)};
+    \draw[axis] (0,0,0) -- (0,0,1.8) node[left, color=white] {$y$};
     
     % Draw vector v
     \coordinate (O) at (0,0);
     \coordinate (V) at (0.58,0.57,0.58);
     \coordinate (ProjP) at (0.58,0,0.58);
     
-    \draw[vector] (O) -- (V) node[above right] {$\vec{v} = [v_x, v_y, v_z]^T$};
+    \draw[vector] (O) -- (V) node[above right, color=white] {$\vec{v} = [v_x, v_y, v_z]^T$};
     \draw[proj] (V) -- (ProjP);
-    \draw[proj] (O) -- (ProjP) node[midway, below] {$\vec{\xi}$};
+    \draw[proj] (O) -- (ProjP) node[midway, below, color=white] {$\vec{\xi}$};
     \draw[proj] (ProjP) -- (0.58,0,0);
     \draw[proj] (ProjP) -- (0,0,0.58);
     
     % Draw Latitud alpha angle
-    \draw[draw=orange, thick] (0.2,0,0.2) arc (-45:20:0.28);
-    \node[orange] at (0.32,0.12,0.1) {$\alpha$};
+    \draw[draw=orange!80!white, thick, decorate, decoration={random steps, segment length=1.5mm, amplitude=0.15pt}] (0.2,0,0.2) arc (-45:20:0.28);
+    \node[orange!85!white] at (0.32,0.12,0.1) {$\alpha$};
     
     % Draw Longitud beta angle
-    \draw[draw=purple, thick] (0.3,0,0) arc (0:-45:0.3);
-    \node[purple] at (0.32,-0.12,0.05) {$\beta$};
+    \draw[draw=yellow!80!orange, thick, decorate, decoration={random steps, segment length=1.5mm, amplitude=0.15pt}] (0.3,0,0) arc (0:-45:0.3);
+    \node[yellow!90!orange] at (0.32,-0.12,0.05) {$\beta$};
 \end{tikzpicture}
-\caption{Representación Geométrica en $\mathbb{R}^3$ del Vector de Posición Geocéntrico.}
+\caption{Representación Geométrica en $\mathbb{R}^3$ del Vector de Posición Geocéntrico (Estilo Pizarrón).}
 \label{fig:geocentrico}
 \end{figure}
 
@@ -181,6 +242,58 @@ Dado que el coseno es una función par ($\cos(-x) = \cos x$), se debe resolver l
     \beta = \begin{cases} -\arccos \left( \frac{v_x}{\sqrt{v_x^2 + v_y^2}} \right) & \text{si } v_y < 0 \\ \arccos \left( \frac{v_x}{\sqrt{v_x^2 + v_y^2}} \right) & \text{si } v_y \ge 0 \end{cases}
 \end{equation}
 
+Esta definición condicional resuelve analíticamente el cuadrante del plano horizontal en el que se ubica el vector proyectado $\vec{\xi}$, mapeando correctamente la longitud $\beta \in (-\pi, \pi]$ de acuerdo con la dirección angular de los vectores en los cuatro cuadrantes (donde $\beta < 0$ si va en sentido de las manecillas del reloj y $\beta \ge 0$ en sentido contrario), tal como se detalla en el siguiente diagrama:
+
+\begin{figure}[H]
+\centering
+\begin{tikzpicture}[scale=2.0, >=stealth, chalkboard style,
+    axis/.style={chalkaxis},
+    vector/.style={chalkvector},
+    circle_style/.style={chalkcircle},
+    angle/.style={chalkangle}
+]
+    % Draw grid / axes
+    \draw[axis] (-2,0) -- (2,0) node[right, color=white] {$x$};
+    \draw[axis] (0,-2) -- (0,2) node[above, color=white] {$y$};
+    
+    % Draw projection circle
+    \draw[circle_style] (0,0) circle (1.5);
+    \node[white, above right] at (0.9,0.9) {\small Plano $xy$};
+    
+    % Define vectors in 4 quadrants
+    \coordinate (O) at (0,0);
+    \coordinate (Q1) at (1.06, 1.06);   % 45 deg
+    \coordinate (Q2) at (-1.06, 1.06);  % 135 deg
+    \coordinate (Q3) at (-1.06, -1.06); % -135 deg
+    \coordinate (Q4) at (1.06, -1.06);  % -45 deg
+    
+    % Draw vectors
+    \draw[vector, draw=cyan!80!white] (O) -- (Q1) node[above right, color=white] {$\vec{\xi}_1$};
+    \draw[vector, draw=yellow!80!white] (O) -- (Q2) node[above left, color=white] {$\vec{\xi}_2$};
+    \draw[vector, draw=orange!80!white] (O) -- (Q3) node[below left, color=white] {$\vec{\xi}_3$};
+    \draw[vector, draw=pink!80!white] (O) -- (Q4) node[below right, color=white] {$\vec{\xi}_4$};
+    
+    % Draw angles
+    % Q1: beta_1 > 0
+    \draw[draw=cyan!90!white, thick, ->, decorate, decoration={random steps, segment length=1.5mm, amplitude=0.1pt}] (0.4,0) arc (0:45:0.4);
+    \node[cyan!90!white] at (0.6,0.25) {\small $\beta_1 > 0$};
+    
+    % Q2: beta_2 > 0
+    \draw[draw=yellow!90!white, thick, ->, decorate, decoration={random steps, segment length=1.5mm, amplitude=0.1pt}] (0.5,0) arc (0:135:0.5);
+    \node[yellow!90!white] at (-0.5,0.7) {\small $\beta_2 > 0$};
+    
+    % Q3: beta_3 < 0
+    \draw[draw=orange!90!white, thick, ->, decorate, decoration={random steps, segment length=1.5mm, amplitude=0.1pt}] (0.6,0) arc (0:-135:0.6);
+    \node[orange!90!white] at (-0.5,-0.8) {\small $\beta_3 < 0$};
+    
+    % Q4: beta_4 < 0
+    \draw[draw=pink!90!white, thick, ->, decorate, decoration={random steps, segment length=1.5mm, amplitude=0.1pt}] (0.7,0) arc (0:-45:0.7);
+    \node[pink!90!white] at (0.8,-0.4) {\small $\beta_4 < 0$};
+\end{tikzpicture}
+\caption{Análisis de Signos de la Longitud $\beta$ en los Cuatro Cuadrantes del Plano Ecuatorial (Estilo Pizarrón).}
+\label{fig:cuadrantes}
+\end{figure}
+
 \section{Algoritmo de Desplazamiento Geodésico Sobre la Esfera}
 
 Dadas dos ubicaciones geodésicas en la Tierra representadas por sus vectores de posición cartesianos conocidos $\vec{v_1}$ y $\vec{v_2}$ (ambos de magnitud $r_t$), se desea calcular el vector de posición $\vec{v_3}$ de una tercera ubicación situada a una distancia real de arco $\phi$ (en metros) sobre la superficie, partiendo desde $\vec{v_1}$ en la dirección de la cuerda recta $\vec{\xi} = \vec{v_2} - \vec{v_1}$ en $\mathbb{R}^3$.
@@ -189,58 +302,58 @@ Para resolver esto, modelamos un triángulo plano $OAB$ en el espacio tridimensi
 
 \begin{figure}[H]
 \centering
-\begin{tikzpicture}[scale=1.8, >=stealth,
-    origin/.style={circle, draw, fill=black, inner sep=1.5pt},
-    node/.style={circle, draw, fill=blue, inner sep=1.5pt},
-    chord/.style={->, thick, red},
-    radius/.style={dashed, gray},
-    angle/.style={draw, <->, thin}
+\begin{tikzpicture}[scale=1.8, >=stealth, chalkboard style,
+    origin/.style={circle, draw=white, fill=white, inner sep=1.5pt},
+    node/.style={circle, draw=white, fill=cyan!80!white, inner sep=1.5pt},
+    chord/.style={chalkchord},
+    radius/.style={chalkdashed},
+    angle/.style={chalkangle}
 ]
     % Origin
-    \node[origin, label=below:$O$] (O) at (0,0) {};
+    \node[origin, label={[text=white]below:$O$}] (O) at (0,0) {};
     
     % Point A (v1)
     \coordinate (A) at (0,4);
-    \node[node, label=left:{$A (\vec{v_1})$}] at (A) {};
-    \draw[thick, ->] (O) -- (A) node[midway, left] {$r_t$};
+    \node[node, label={[text=white]left:{$A (\vec{v_1})$}}] at (A) {};
+    \draw[chalkaxis] (O) -- (A) node[midway, left, color=white] {$r_t$};
     
     % Point C (v2)
     \coordinate (C) at (2.5,3.12);
-    \node[node, label=right:{$C (\vec{v_2})$}] at (C) {};
-    \draw[thick, ->] (O) -- (C) node[midway, right] {$r_t$};
+    \node[node, label={[text=white]right:{$C (\vec{v_2})$}}] at (C) {};
+    \draw[chalkaxis] (O) -- (C) node[midway, right, color=white] {$r_t$};
     
     % Chord xi
-    \draw[chord] (A) -- (C) node[midway, above] {$\vec{\xi} = \vec{v_2} - \vec{v_1}$};
+    \draw[chord] (A) -- (C) node[midway, above, color=white] {$\vec{\xi} = \vec{v_2} - \vec{v_1}$};
     
     % Point B (intermediate w)
     \coordinate (B) at (1.2,3.58);
-    \node[circle, draw, fill=purple, inner sep=1.2pt, label=above right:{$B (\vec{w})$}] at (B) {};
-    \draw[dashed, ->] (O) -- (B);
+    \node[circle, draw=white, fill=pink!80!white, inner sep=1.2pt, label={[text=white]above right:{$B (\vec{w})$}}] at (B) {};
+    \draw[chalkdashed] (O) -- (B);
     
     % Intersection point v3
     \coordinate (V3) at (0.79, 3.92); % projected on sphere
-    \node[circle, draw, fill=green, inner sep=1.5pt, label=above:{$v_3$}] at (V3) {};
+    \node[circle, draw=white, fill=green!80!white, inner sep=1.5pt, label={[text=white]above:{$v_3$}}] at (V3) {};
     
     % Draw earth surface arc
-    \draw[draw=blue, thick] (0,4) arc (90:51.3:4);
-    \node[blue] at (1.5, 3.8) {Arco $\phi$};
+    \draw[draw=cyan!80!white, thick, decorate, decoration={random steps, segment length=2mm, amplitude=0.15pt}] (0,4) arc (90:51.3:4);
+    \node[cyan!80!white] at (1.5, 3.8) {Arco $\phi$};
     
     % Draw angle theta at O
-    \draw (0,0.8) arc (90:51.3:0.8);
-    \node at (0.3,1.0) {$\theta$};
+    \draw[draw=yellow!80!orange, thick, decorate, decoration={random steps, segment length=1.5mm, amplitude=0.1pt}] (0,0.8) arc (90:51.3:0.8);
+    \node[yellow!80!orange] at (0.3,1.0) {$\theta$};
     
     % Draw angle gamma2 and gamma1 at A
-    \draw (0,3.5) arc (270:345:0.5);
-    \node at (0.2,3.3) {$\gamma_2$};
+    \draw[draw=orange!80!white, thick, decorate, decoration={random steps, segment length=1mm, amplitude=0.1pt}] (0,3.5) arc (270:345:0.5);
+    \node[orange!80!white] at (0.2,3.3) {$\gamma_2$};
     
-    \draw (0,3.4) arc (270:90:0.6);
-    \node at (-0.3,3.4) {$\gamma_1$};
+    \draw[draw=pink!80!white, thick, decorate, decoration={random steps, segment length=1mm, amplitude=0.1pt}] (0,3.4) arc (270:90:0.6);
+    \node[pink!80!white] at (-0.3,3.4) {$\gamma_1$};
     
     % Draw angle sigma at B
-    \draw (1.2,3.58) -- ++(-0.2,-0.6);
-    \node at (0.9,3.3) {$\sigma$};
+    \draw[draw=yellow!80!orange, thick, decorate, decoration={random steps, segment length=1mm, amplitude=0.1pt}] (1.2,3.58) -- ++(-0.2,-0.6);
+    \node[yellow!80!orange] at (0.9,3.3) {$\sigma$};
 \end{tikzpicture}
-\caption{Diagrama del Triángulo Auxiliar $OAB$ para la Deducción del Desplazamiento Geodésico.}
+\caption{Diagrama del Triángulo Auxiliar $OAB$ para la Deducción del Desplazamiento Geodésico (Estilo Pizarrón).}
 \label{fig:desplazamiento}
 \end{figure}
 
@@ -288,6 +401,11 @@ Finalmente, normalizamos y proyectamos el vector de vuelta a la superficie esfé
 \begin{equation}
     \vec{v_3} = r_t \mathbf{\hat{w}} = r_t \frac{\vec{w}}{|\vec{w}|}
 \end{equation}
+Como se detalla en los diagramas del pizarrón escolar original, esta proyección radial de vuelta a la superficie esférica se puede expresar de forma alternativa sumando al vector secante $\vec{w}$ el vector del segmento radial restante $(r_t - |\vec{w}|)$ en su propia dirección unitaria $\mathbf{\hat{w}}$:
+\begin{equation}
+    \vec{v_3} = \vec{w} + (r_t - |\vec{w}|) \mathbf{\hat{w}}
+\end{equation}
+donde $\mathbf{\hat{w}} = \frac{\vec{w}}{|\vec{w}|}$. Esta formulación hace más intuitiva la noción física de alargar radialmente el punto secante $B(\vec{w})$ hasta intersectar la superficie esférica de la Tierra en $v_3$.
 
 \section{Universo Geográfico del Campus (Bounding Box)}
 
